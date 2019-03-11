@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui.setupUi(this);
 	about = new ABOUT(this);
 	inputModelE = new ModelParaInputE(this);
+	inputModelDM = new ModelParaInputDM(this);
 	initState = new InitState(this);
 	endAndReversalState = new EndAndReversalState(this);
 	endAndReversalStateNoCycle = new EndAndReversalStateNoCycle(this);
@@ -78,7 +79,7 @@ void MainWindow::setType() {
 void MainWindow::setModel() {
 	QComboBox *consModel = new QComboBox(this);
 	consModel->setFont(QFont("Timers", 11, QFont::Courier));
-	consModel->resize(180, 30);
+	consModel->resize(280, 30);
 	consModel->move(30, 164);
 	consModel->height();
 	consModel->addItem(QWidget::tr("线性模型"));
@@ -245,6 +246,10 @@ void MainWindow::setModelParameter() {
 		connect(inputModelE, SIGNAL(sendEv(double, double)), this, SLOT(receiveE(double, double)));
 		inputModelE->show();
 		break;
+	case 2:
+		connect(inputModelDM, SIGNAL(sendparaDM(double[])), this, SLOT(receiveDM(double[])));
+		inputModelDM->show();
+		break;
 	default:
 		QMessageBox::information(this, tr("hello"), tr("Hello World!"));
 	}
@@ -253,6 +258,12 @@ void MainWindow::setModelParameter() {
 void MainWindow::receiveE(double E, double v) {
 	model->internalParameter[0] = E;
 	model->internalParameter[1] = v;
+}
+
+void MainWindow::receiveDM(double para[]) {
+	for (int i = 0; i < 16; i++) {
+		model->internalParameter[i] = para[i];
+	}
 }
 
 void MainWindow::setStepLength(int l) {

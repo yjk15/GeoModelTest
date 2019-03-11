@@ -6,6 +6,7 @@
 #include "Model.h"
 #include "chart.h"
 #include "ModelParaInputE.h"
+#include "ModelParaInputDM.h"
 #include "InitState.h"
 #include "EndAndReversalState.h"
 #include "EndAndReversalStateNoCycle.h"
@@ -30,6 +31,7 @@ public:
 	QLineEdit *figureTitle;
 	Chart *figure;
 	ModelParaInputE *inputModelE;
+	ModelParaInputDM *inputModelDM;
 	InitState *initState;
 	EndAndReversalState *endAndReversalState;
 	EndAndReversalStateNoCycle *endAndReversalStateNoCycle;
@@ -51,6 +53,7 @@ private slots:
 	void setConsModel(int model);
 	void setModelParameter();
 	void receiveE(double, double);
+	void receiveDM(double[]);
 	
 	void setStepLength(int l);
 	void checkParameter();
