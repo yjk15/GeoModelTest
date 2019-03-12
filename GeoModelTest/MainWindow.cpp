@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui.setupUi(this);
 	about = new ABOUT(this);
+	filePath = "";
+	resultFilePath = "";
 	inputModelE = new ModelParaInputE(this);
 	inputModelDM = new ModelParaInputDM(this);
 	initState = new InitState(this);
@@ -35,6 +37,28 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setMenu() {
+	QMenu *file = new QMenu("文件");
+	QAction *loadPara = new QAction(this);
+	loadPara->setText("载入参数");
+	file->addAction(loadPara);
+	connect(loadPara, SIGNAL(triggered()), this, SLOT(loadParameter()));
+
+	QAction *savePara = new QAction(this);
+	savePara->setText("保存参数");
+	file->addAction(savePara);
+	connect(savePara, SIGNAL(triggered()), this, SLOT(saveParameter()));
+
+	QAction *saveParaNew = new QAction(this);
+	saveParaNew->setText("另存为参数");
+	file->addAction(saveParaNew);
+	connect(saveParaNew, SIGNAL(triggered()), this, SLOT(saveParameterInNewFile()));
+
+	QAction *saveOutput = new QAction(this);
+	saveOutput->setText("保存结果");
+	file->addAction(saveOutput);
+	connect(saveOutput, SIGNAL(triggered()), this, SLOT(saveResult()));
+	ui.menuBar->addMenu(file);
+
 	QMenu *menu = new QMenu("帮助");
 	QAction *userManual = new QAction(this);
 	userManual->setText("用户手册");
@@ -232,6 +256,159 @@ void MainWindow::openManual() {
 
 void MainWindow::openAbout() {
 	about->show();
+}
+
+void MainWindow::loadParameter() {
+	filePath = QFileDialog::getOpenFileName(this, tr("载入参数"), "", tr("data(*.dat);;all(*.*)"));
+	QFile file(filePath);
+	QString para;
+	file.open(QIODevice::ReadOnly);
+	para = file.readLine();
+	model->testType = para.toInt();
+	para = file.readLine();
+	model->model = para.toInt();
+	para = file.readLine();
+	model->endAndReversalType = para.toInt();
+	para = file.readLine();
+	model->endAndReversalPoint = para.toDouble();
+	para = file.readLine();
+	model->loop = para.toInt();
+	para = file.readLine();
+	model->loopCounter = para.toInt();
+	para = file.readLine();
+	QVariant tmp = para;
+	model->direction = tmp.toBool();
+	para = file.readLine();
+	*model->figureTitle = para;
+	para = file.readLine();
+	model->axisX = para.toInt();
+	para = file.readLine();
+	model->axisY = para.toInt();
+	para = file.readLine();
+	model->stepLength = para.toDouble();
+	for (int i = 0; i < 30; i++) {
+		para = file.readLine();
+		model->internalParameter[i] = para.toDouble();
+	}
+	for (int i = 0; i < 9; i++) {
+		para = file.readLine();
+		model->stress.matrix[i] = para.toDouble();
+	}
+	for (int i = 0; i < 9; i++) {
+		para = file.readLine();
+		model->strain.matrix[i] = para.toDouble();
+	}
+	file.close();
+}
+
+void MainWindow::saveParameter() {
+	if (filePath == "")
+		filePath = QFileDialog::getOpenFileName(this, tr("保存参数"), "", tr("data(*.dat);;all(*.*)"));
+	QString para;
+	para.append(QString::number(model->testType));
+	para.append("\n");
+	para.append(QString::number(model->model));
+	para.append("\n");
+	para.append(QString::number(model->endAndReversalType));
+	para.append("\n");
+	para.append(QString::number(model->endAndReversalPoint));
+	para.append("\n");
+	para.append(QString::number(model->loop));
+	para.append("\n");
+	para.append(QString::number(model->loopCounter));
+	para.append("\n");
+	para.append(QString::number(model->direction));
+	para.append("\n");
+	para.append(*model->figureTitle);
+	para.append("\n");
+	para.append(QString::number(model->axisX));
+	para.append("\n");
+	para.append(QString::number(model->axisY));
+	para.append("\n");
+	para.append(QString::number(model->stepLength));
+	para.append("\n");
+	for (int i = 0; i < 30; i++) {
+		para.append(QString::number(model->internalParameter[i]));
+		para.append("\n");
+	}
+	for (int i = 0; i < 9; i++) {
+		para.append(QString::number(model->stress.matrix[i]));
+		para.append("\n");
+	}
+	for (int i = 0; i < 9; i++) {
+		para.append(QString::number(model->strain.matrix[i]));
+		para.append("\n");
+	}
+	
+	QFile file(filePath);
+	file.open(QIODevice::WriteOnly);
+	file.write(para.toUtf8());
+	file.close();
+}
+
+void MainWindow::saveParameterInNewFile() {
+	filePath = QFileDialog::getOpenFileName(this, tr("另存为参数"), "", tr("data(*.dat);;all(*.*)"));
+	QString para;
+	para.append(QString::number(model->testType));
+	para.append("\n");
+	para.append(QString::number(model->model));
+	para.append("\n");
+	para.append(QString::number(model->endAndReversalType));
+	para.append("\n");
+	para.append(QString::number(model->endAndReversalPoint));
+	para.append("\n");
+	para.append(QString::number(model->loop));
+	para.append("\n");
+	para.append(QString::number(model->loopCounter));
+	para.append("\n");
+	para.append(QString::number(model->direction));
+	para.append("\n");
+	para.append(*model->figureTitle);
+	para.append("\n");
+	para.append(QString::number(model->axisX));
+	para.append("\n");
+	para.append(QString::number(model->axisY));
+	para.append("\n");
+	para.append(QString::number(model->stepLength));
+	para.append("\n");
+	for (int i = 0; i < 30; i++) {
+		para.append(QString::number(model->internalParameter[i]));
+		para.append("\n");
+	}
+	for (int i = 0; i < 9; i++) {
+		para.append(QString::number(model->stress.matrix[i]));
+		para.append("\n");
+	}
+	for (int i = 0; i < 9; i++) {
+		para.append(QString::number(model->strain.matrix[i]));
+		para.append("\n");
+	}
+
+	QFile file(filePath);
+	file.open(QIODevice::WriteOnly);
+	file.write(para.toUtf8());
+	file.close();
+}
+
+void MainWindow::saveResult() {
+	resultFilePath = QFileDialog::getOpenFileName(this, tr("保存输出文件"), "", tr("data(*.dat);;all(*.*)"));
+	QFile file(resultFilePath);
+	file.open(QIODevice::WriteOnly);
+	QString result;
+	for (int i = 0; i < model->stressPath->size(); i++) {
+		for (int j = 0; j < 9; j++) {
+			result.append(QString::number(model->stressPath->at(i).matrix[j]));
+			result.append(" ");
+		}
+		for (int j = 0; j < 9; j++) {
+			result.append(QString::number(model->strainPath->at(i).matrix[j]));
+			result.append(" ");
+		}
+		result.append("\n");
+		file.write(result.toUtf8());
+		result = "";
+	}
+	file.close();
 }
 
 void MainWindow::setConsModel(int model) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
+#include <QString>
 #include "ui_MainWindow.h"
 #include "about.h"
 #include "Model.h"
@@ -28,6 +29,7 @@ public:
 	
 	MODEL *model;
 	ABOUT *about;
+	QString filePath, resultFilePath;
 	QLineEdit *figureTitle;
 	Chart *figure;
 	ModelParaInputE *inputModelE;
@@ -49,6 +51,10 @@ private slots:
 	
 	void openManual();
 	void openAbout();
+	void loadParameter();
+	void saveParameter();
+	void saveParameterInNewFile();
+	void saveResult();
 	
 	void setConsModel(int model);
 	void setModelParameter();

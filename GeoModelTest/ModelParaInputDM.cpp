@@ -41,7 +41,7 @@ ModelParaInputDM::~ModelParaInputDM() {
 void ModelParaInputDM::clickYes() {
 	para[0] = method->currentData().toDouble();
 	for (int i = 1; i < 16; i++) {
-		para[1] = input[i - 1].text().toDouble();
+		para[i] = input[i - 1].text().toDouble();
 	}
 
 	emit sendParaDM(para);
