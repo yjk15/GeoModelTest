@@ -59,7 +59,7 @@ private slots:
 	void setConsModel(int model);
 	void setModelParameter();
 	void receiveE(double, double);
-	void receiveDM(double[]);
+	void receiveDM(double*);
 	
 	void setStepLength(int l);
 	void checkParameter();

@@ -19,13 +19,13 @@ public:
 	QLineEdit *input;
 	QComboBox *method;
 	QPushButton *yes, *cancel;
-	double *para; //隐式/显式, G0, v, M, c, lambdaC, e0, xi, m, h0, ch, nb, nd, A0, nd, zmax, cz
+	double para[16]; //隐式/显式, G0, v, M, c, lambdaC, e0, xi, m, h0, ch, nb, nd, A0, nd, zmax, cz
 
 private:
 	Ui::Dialog ui;
 
 signals:
-	void sendParaDM(double para[]);
+	void sendParaDM(double *para);
 
 private slots:
 	void clickYes();

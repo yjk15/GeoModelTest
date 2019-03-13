@@ -424,7 +424,7 @@ void MainWindow::setModelParameter() {
 		inputModelE->show();
 		break;
 	case 2:
-		connect(inputModelDM, SIGNAL(sendparaDM(double[])), this, SLOT(receiveDM(double[])));
+		connect(inputModelDM, SIGNAL(sendParaDM(double*)), this, SLOT(receiveDM(double*)));
 		inputModelDM->show();
 		break;
 	default:
@@ -437,7 +437,7 @@ void MainWindow::receiveE(double E, double v) {
 	model->internalParameter[1] = v;
 }
 
-void MainWindow::receiveDM(double para[]) {
+void MainWindow::receiveDM(double* para) {
 	for (int i = 0; i < 16; i++) {
 		model->internalParameter[i] = para[i];
 	}

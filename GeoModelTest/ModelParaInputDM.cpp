@@ -7,7 +7,6 @@ ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 	ui.setupUi(this);
 	input = new QLineEdit[15];
 	method = new QComboBox(this);
-	para = new double[16];
 
 	for (int i = 0; i < 15; i++) {
 		input[i].setParent(this);
@@ -35,11 +34,11 @@ ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 
 ModelParaInputDM::~ModelParaInputDM() {
 	delete yes, cancel, method;
-	delete[] input, para;
+	delete[] input;
 }
 
 void ModelParaInputDM::clickYes() {
-	para[0] = method->currentData().toDouble();
+	para[0] = method->currentIndex();
 	for (int i = 1; i < 16; i++) {
 		para[i] = input[i - 1].text().toDouble();
 	}
