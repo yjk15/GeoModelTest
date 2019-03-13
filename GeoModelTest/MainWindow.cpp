@@ -405,9 +405,8 @@ void MainWindow::saveResult() {
 			result.append(" ");
 		}
 		result.append("\n");
-		file.write(result.toUtf8());
-		result = "";
 	}
+	file.write(result.toUtf8());
 	file.close();
 }
 
