@@ -40,6 +40,11 @@ private:
 	void IntegratorE(bool);
 
 	void IntegratorDMExplicit(bool);
+	struct RK4Class {
+		MATRIX ds, dAlpha, dz;
+		double dee;
+	};
+	RK4Class RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit);
 	void IntegratorDMImplicit(bool);
 	double relu(double x);
 	double getG(double p, double e);

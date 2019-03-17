@@ -33,6 +33,19 @@ MODEL::~MODEL() {
 }
 
 void MODEL::Simulate() {
+	if (model == 2) {
+		MATRIX I(1, 1, 1), alpha = stress - tr(stress) / 3 * I, alphaInit = alpha, z;
+		vector<double> tmpPara;
+		tmpPara.push_back(internalParameter[6]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(z.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
+	
 	while (!isEndingPoint()) {
 		stressPath->push_back(stress);
 		strainPath->push_back(strain);
@@ -160,6 +173,7 @@ void MODEL::Integrator(bool updateFlag) {
 bool MODEL::isEndingPoint() {
 	double p, q, epsilonv;
 	if (testType == 2 || testType == 5) {
+		isReversalPoint();
 		if (loopCounter >= loop * 2 + 1)
 			return true;
 		return false;
@@ -203,15 +217,17 @@ bool MODEL::isReversalPoint() {
 		return false;
 
 	case 1:
-		q = stress(0, 0) - stress(3, 3);
+		q =  - stress(0, 0) + stress(2, 2);
 		if (q >= abs(endAndReversalPoint)) {
+			if (direction != false)
+				loopCounter += 1;
 			direction = false;
-			loopCounter += 1;
 			return true;
 		}
 		else if (q < -abs(endAndReversalPoint)) {
+			if (direction != true)
+				loopCounter += 1;
 			direction = true;
-			loopCounter += 1;
 			return true;
 		}
 		else
@@ -247,8 +263,8 @@ void MODEL::IntegratorE(bool updateFlag) {
 }
 
 void MODEL::IntegratorDMExplicit(bool updateFlag) {
-	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0;
-	MATRIX ds, n, alpha, z, alphaInit, dz, dAlpha;
+	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0, depsv;
+	MATRIX ds, n, alpha, z, alphaInit, dz, dAlpha, I(1, 1, 1);
 	for (int i = 0; i < 9; i++)
 		alpha.matrix[i] = saveParameter.back().at(i + 1);
 	for (int i = 0; i < 9; i++)
@@ -257,18 +273,78 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 		alphaInit.matrix[i] = saveParameter.back().at(i + 19);
 	double p = tr(stress) / 3; 
 	double ee = saveParameter.back().at(0);
-	
+	depsv = tr(strainIncrement) / 3;
+
 	G = getG(p, ee);
 	K = getK(G);
-	ds = 2 * G * strainIncrement;
-	f = getF(stress + ds, alpha, p);
+	ds = 2 * G * (strainIncrement - depsv * I);
+	f = getF(stress - p * I + ds, alpha, p);
 
 	if (f < 0) {
 		alphaInit = alpha;
+		stressIncrement = ds + depsv * K * I;
 	}
 	else {
-
+		MODEL::RK4Class rk41, rk42, rk43, rk44;
+		rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
+		rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
+		rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
+		rk44 = RK4(stress + rk43.ds / 2, alpha + rk43.dAlpha / 2, ee + rk43.dee, z + rk43.dz / 2, strain, alphaInit);
+		stressIncrement = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
+		alpha = alpha + (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
+		z = z + (rk41.dz + rk42.dz * 2 + rk43.dz * 2 + rk44.dz) / 6;
+		ee = ee + (rk41.dee + rk42.dee * 2 + rk43.dee * 2 + rk44.dee) / 6;
 	}
+
+	f = getF(stress - (p + tr(stressIncrement)) * I + stressIncrement, alpha, p + tr(stressIncrement));
+
+	vector<double> tmpPara;
+	if (updateFlag) {
+		tmpPara.push_back(ee);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(z.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
+}
+
+MODEL::RK4Class MODEL::RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit) {
+	MATRIX I(1, 1, 1);
+	double p = tr(stress) / 3;
+	double G = getG(p, ee);
+	double K = getK(G);
+	MATRIX s = stress - p * I;
+	MATRIX r = s / p;
+	MATRIX n = getN(r, alpha);
+	double cos3Theta = getCos3Theta(n);
+	double g = getg(cos3Theta);
+	MATRIX alphaThetaD = getAlphaThetaD(n, p, ee, g);
+	MATRIX alphaThetaB = getAlphaThetaB(n, p, ee, g);
+	double Ad = getAd(z, n);
+	double B = getB(cos3Theta, g);
+	double C = getC(g);
+	double D = getD(n, Ad, alpha, alphaThetaD);
+	double h = getH(ee, p, alpha, alphaInit, n);
+	double Kp = getKp(alphaThetaB, alpha, p, n, h);
+	double depsv = tr(strain) / 3;
+	MATRIX de = strain - depsv * I;
+	double L = getL(n, G, r, de, depsv, Kp, B, C, K, D);
+	MATRIX RAp = getRAp(B, C, n);
+	
+	MATRIX ds = getdSigma(G, de, K, depsv, L, RAp, D);
+	MATRIX dAlpha = getdAlpha(L, h, alphaThetaB, alpha);
+	MATRIX dz = getdz(relu(L) * D, n, z);
+	double dee = -depsv * (1 + ee);
+
+	MODEL::RK4Class result;
+	result.dAlpha = dAlpha;
+	result.dz = dz;
+	result.ds = ds;
+	result.dee = dee;
+	return result;
 }
 
 void MODEL::IntegratorDMImplicit(bool updateFlag) {
@@ -303,8 +379,14 @@ double MODEL::getF(MATRIX s, MATRIX alpha, double p) {
 }
 
 MATRIX MODEL::getN(MATRIX r, MATRIX alpha) {
-	MATRIX n;
+	MATRIX n, I(-1/sqrt(6), -1 / sqrt(6), 2/sqrt(6));
 	n = (r - alpha) / sqrt(2.0 / 3) / internalParameter[8];
+	if ((n % n) - 1 < 1e-6) {
+		if (abs(n(0, 0)) < 1e-3)
+			n = I;
+		else
+			n = I * n(0, 0) / abs(n(0, 0));
+	}
 	return n;
 }
 
@@ -351,9 +433,9 @@ MATRIX MODEL::getAlphaThetaB(MATRIX n, double p, double e, double g) {
 }
 
 double MODEL::getH(double e, double p, MATRIX alpha, MATRIX alphaInit, MATRIX n) {
-	double b0 = internalParameter[0] * internalParameter[9] * (1 - internalParameter[10] * e) * pow(p / pAtmos, -0.5);
-	double tmp = tr((alpha - alphaInit) * n);
-	if (tmp < 0)
+	double b0 = internalParameter[1] * internalParameter[9] * (1 - internalParameter[10] * e) * pow(p / pAtmos, -0.5);
+	double tmp = (alpha - alphaInit) % n;
+	if (abs(tmp) < 1e-6)
 		tmp = 1e-6;
 	return b0 / tmp;
 }

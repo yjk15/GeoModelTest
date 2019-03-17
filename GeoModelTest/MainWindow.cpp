@@ -279,8 +279,6 @@ void MainWindow::loadParameter() {
 	QVariant tmp = para;
 	model->direction = tmp.toBool();
 	para = file.readLine();
-	*model->figureTitle = para;
-	para = file.readLine();
 	model->axisX = para.toInt();
 	para = file.readLine();
 	model->axisY = para.toInt();
@@ -298,6 +296,8 @@ void MainWindow::loadParameter() {
 		para = file.readLine();
 		model->strain.matrix[i] = para.toDouble();
 	}
+	para = file.readLine();
+	*model->figureTitle = para;
 	file.close();
 }
 
@@ -319,8 +319,6 @@ void MainWindow::saveParameter() {
 	para.append("\n");
 	para.append(QString::number(model->direction));
 	para.append("\n");
-	para.append(*model->figureTitle);
-	para.append("\n");
 	para.append(QString::number(model->axisX));
 	para.append("\n");
 	para.append(QString::number(model->axisY));
@@ -339,7 +337,8 @@ void MainWindow::saveParameter() {
 		para.append(QString::number(model->strain.matrix[i]));
 		para.append("\n");
 	}
-	
+	para.append(*model->figureTitle);
+
 	QFile file(filePath);
 	file.open(QIODevice::WriteOnly);
 	file.write(para.toUtf8());
@@ -363,8 +362,6 @@ void MainWindow::saveParameterInNewFile() {
 	para.append("\n");
 	para.append(QString::number(model->direction));
 	para.append("\n");
-	para.append(*model->figureTitle);
-	para.append("\n");
 	para.append(QString::number(model->axisX));
 	para.append("\n");
 	para.append(QString::number(model->axisY));
@@ -383,6 +380,7 @@ void MainWindow::saveParameterInNewFile() {
 		para.append(QString::number(model->strain.matrix[i]));
 		para.append("\n");
 	}
+	para.append(*model->figureTitle);
 
 	QFile file(filePath);
 	file.open(QIODevice::WriteOnly);

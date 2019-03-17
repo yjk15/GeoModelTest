@@ -93,9 +93,6 @@
     <QtMoc Include="chart.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ModelParaInputE.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="InitState.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -110,6 +107,9 @@
     </QtMoc>
     <QtMoc Include="ModelParaInputDM.h">
       <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ModelParaInputE.h">
+      <Filter>Source Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
