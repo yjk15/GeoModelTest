@@ -34,9 +34,9 @@ MODEL::~MODEL() {
 
 void MODEL::Simulate() {
 	if (model == 2) {
-		MATRIX I(1, 1, 1), alpha = stress - tr(stress) / 3 * I, alphaInit = alpha, z;
+		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, z;
 		vector<double> tmpPara;
-		tmpPara.push_back(internalParameter[6]);
+		tmpPara.push_back(0.808);
 		for (int i = 0; i < 9; i++)
 			tmpPara.push_back(alpha.matrix[i]);
 		for (int i = 0; i < 9; i++)
@@ -289,7 +289,7 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 		rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
 		rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
 		rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
-		rk44 = RK4(stress + rk43.ds / 2, alpha + rk43.dAlpha / 2, ee + rk43.dee, z + rk43.dz / 2, strain, alphaInit);
+		rk44 = RK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, z + rk43.dz, strain, alphaInit);
 		stressIncrement = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
 		alpha = alpha + (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
 		z = z + (rk41.dz + rk42.dz * 2 + rk43.dz * 2 + rk44.dz) / 6;
@@ -299,6 +299,7 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 	f = getF(stress - (p + tr(stressIncrement)) * I + stressIncrement, alpha, p + tr(stressIncrement));
 
 	vector<double> tmpPara;
+	tmpPara.clear();
 	if (updateFlag) {
 		tmpPara.push_back(ee);
 		for (int i = 0; i < 9; i++)
@@ -330,7 +331,7 @@ MODEL::RK4Class MODEL::RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MAT
 	double h = getH(ee, p, alpha, alphaInit, n);
 	double Kp = getKp(alphaThetaB, alpha, p, n, h);
 	double depsv = tr(strain) / 3;
-	MATRIX de = strain - depsv * I;
+	MATRIX de = strainIncrement - depsv * I;
 	double L = getL(n, G, r, de, depsv, Kp, B, C, K, D);
 	MATRIX RAp = getRAp(B, C, n);
 	
@@ -348,7 +349,81 @@ MODEL::RK4Class MODEL::RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MAT
 }
 
 void MODEL::IntegratorDMImplicit(bool updateFlag) {
+	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0, depsv, dp = 0;
+	MATRIX r, ds, n, alpha, z, alphaInit, dz, dAlpha, I(1, 1, 1);
+	for (int i = 0; i < 9; i++)
+		alpha.matrix[i] = saveParameter.back().at(i + 1);
+	for (int i = 0; i < 9; i++)
+		z.matrix[i] = saveParameter.back().at(i + 10);
+	for (int i = 0; i < 9; i++)
+		alphaInit.matrix[i] = saveParameter.back().at(i + 19);
+	double p = tr(stress) / 3;
+	double ee = saveParameter.back().at(0);
+	depsv = tr(strainIncrement) / 3;
+	MATRIX s = stress - p * I;
 
+	G = getG(p, ee);
+	K = getK(G);
+	ds = 2 * G * (strainIncrement - depsv * I);
+	f = getF(stress - p * I + ds, alpha, p);
+	MATRIX alphaThetaD, alphaThetaB, RAp, tmp;
+	double cos3Theta, Ad, h, Kp, dL, dee;
+	dee = -depsv * (1 + ee);
+
+	if (f < 0) {
+		alphaInit = alpha;
+		stressIncrement = ds + depsv * K * I;
+	}
+	else {
+		for (int i = 0; i < 100; i++) {
+			G = getG(p + dp, ee);
+			K = getK(G);
+			r = (s + ds) / (p + dp);
+			n = getN(r, alpha + dAlpha);
+			cos3Theta = getCos3Theta(n);
+			g = getg(cos3Theta);
+			alphaThetaD = getAlphaThetaD(n, p + dp, ee + dee, g);
+			alphaThetaB = getAlphaThetaB(n, p + dp, ee + dee, g);
+			Ad = getAd(z + dz, n);
+			B = getB(cos3Theta, g);
+			C = getC(g);
+			D = getD(n, Ad, alpha + dAlpha, alphaThetaD);
+			h = getH(ee + dee, p + dp, alpha + dAlpha, alphaInit, n);
+			RAp = getRAp(B, C, n);
+			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
+			f = getF(s + ds, alpha + dAlpha, p + dp);
+			if (abs(f) < 1e-6)
+				break;
+
+			tmp = -2 * G * RAp + D * K * alpha - 2.0 / 3 * p * h * (alphaThetaB - alpha);
+			dL = f / ((tmp % (s + ds - (p + dp) * (alpha + dAlpha))) / sqrt((s + ds - (p + dp) * (alpha + dAlpha)) % (s + ds - (p + dp) * (alpha + dAlpha))) + sqrt(2.0 / 3) * D * K * internalParameter[8]);
+
+			L = L - dL;
+			dp = K * (-relu(L) * D);
+			ds = (strainIncrement - depsv * I - relu(L) * RAp) * 2 * G;
+			dAlpha = getdAlpha(L, h, alphaThetaB, alpha + dAlpha);
+			dz = getdz(relu(L) * D, n, z + dz);
+		}
+		alpha = alpha + dAlpha;
+		z = z + dz;
+		stressIncrement = ds + dp * I;
+		ee = ee + dee;
+	}
+
+	f = getF(s + ds, alpha, p + dp);
+
+	vector<double> tmpPara;
+	tmpPara.clear();
+	if (updateFlag) {
+		tmpPara.push_back(ee);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(z.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
 }
 
 double MODEL::relu(double x) {
@@ -375,14 +450,14 @@ double MODEL::getEc(double pc) {
 }
 
 double MODEL::getF(MATRIX s, MATRIX alpha, double p) {
-	return (s - p * alpha) % (s - p * alpha) - sqrt(2.0 / 3.0) * p * internalParameter[8];
+	return sqrt((s - p * alpha) % (s - p * alpha)) - sqrt(2.0 / 3.0) * p * internalParameter[8];
 }
 
 MATRIX MODEL::getN(MATRIX r, MATRIX alpha) {
 	MATRIX n, I(-1/sqrt(6), -1 / sqrt(6), 2/sqrt(6));
 	n = (r - alpha) / sqrt(2.0 / 3) / internalParameter[8];
 	if ((n % n) - 1 < 1e-6) {
-		if (abs(n(0, 0)) < 1e-3)
+		if (abs(n(0, 0)) > 1e-6)
 			n = I;
 		else
 			n = I * n(0, 0) / abs(n(0, 0));
@@ -411,7 +486,7 @@ MATRIX MODEL::getAlphaThetaD(MATRIX n, double p, double e, double g) {
 }
 
 double MODEL::getB(double cos3Theta, double g) {
-	return 1 + 3.0 / 2 * (1 + internalParameter[4]) / internalParameter[4] * g * cos3Theta;
+	return 1 + 3.0 / 2 * (1 - internalParameter[4]) / internalParameter[4] * g * cos3Theta;
 }
 
 double MODEL::getC(double g) {
@@ -435,8 +510,8 @@ MATRIX MODEL::getAlphaThetaB(MATRIX n, double p, double e, double g) {
 double MODEL::getH(double e, double p, MATRIX alpha, MATRIX alphaInit, MATRIX n) {
 	double b0 = internalParameter[1] * internalParameter[9] * (1 - internalParameter[10] * e) * pow(p / pAtmos, -0.5);
 	double tmp = (alpha - alphaInit) % n;
-	if (abs(tmp) < 1e-6)
-		tmp = 1e-6;
+	if (abs(tmp) < 1e-8)
+		tmp = 1e-8;
 	return b0 / tmp;
 }
 

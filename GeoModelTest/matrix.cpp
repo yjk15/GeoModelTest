@@ -49,7 +49,7 @@ void MATRIX::clear() {
 		this->matrix[i] = 0;
 }
 
-MATRIX operator+(MATRIX& M, MATRIX& N) {
+MATRIX operator+(MATRIX M, MATRIX N) {
 	MATRIX tmp = M;
 	for (int i = 0; i < 9; i++)
 		tmp.matrix[i] += N.matrix[i];
@@ -57,7 +57,7 @@ MATRIX operator+(MATRIX& M, MATRIX& N) {
 	return tmp;
 }
 
-MATRIX operator-(MATRIX& M, MATRIX& N) {
+MATRIX operator-(MATRIX M, MATRIX N) {
 	MATRIX tmp = M;
 	for (int i = 0; i < 9; i++)
 		tmp.matrix[i] -= N.matrix[i];
@@ -65,7 +65,7 @@ MATRIX operator-(MATRIX& M, MATRIX& N) {
 	return tmp;
 }
 
-MATRIX operator * (MATRIX& M, MATRIX& N) {
+MATRIX operator * (MATRIX M, MATRIX N) {
 	MATRIX tmp;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
@@ -75,7 +75,7 @@ MATRIX operator * (MATRIX& M, MATRIX& N) {
 	return tmp;
 }
 
-MATRIX operator * (MATRIX& M, double a) {
+MATRIX operator * (MATRIX M, double a) {
 	MATRIX tmp = M;
 	for (int i = 0; i < 9; i++)
 		tmp.matrix[i] *= a;
@@ -83,7 +83,7 @@ MATRIX operator * (MATRIX& M, double a) {
 	return tmp;
 }
 
-MATRIX operator * (double a, MATRIX& M) {
+MATRIX operator * (double a, MATRIX M) {
 	MATRIX tmp = M;
 	for (int i = 0; i < 9; i++)
 		tmp.matrix[i] *= a;
@@ -91,7 +91,7 @@ MATRIX operator * (double a, MATRIX& M) {
 	return tmp;
 }
 
-MATRIX operator / (MATRIX& M, double a) {
+MATRIX operator / (MATRIX M, double a) {
 	MATRIX tmp = M;
 	for (int i = 0; i < 9; i++)
 		tmp.matrix[i] /= a;
@@ -99,7 +99,7 @@ MATRIX operator / (MATRIX& M, double a) {
 	return tmp;
 }
 
-double operator % (MATRIX& M, MATRIX& N) {
+double operator % (MATRIX M, MATRIX N) {
 	double a = 0;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
@@ -108,7 +108,7 @@ double operator % (MATRIX& M, MATRIX& N) {
 	return a;
 }
 
-void print(MATRIX& M) {
+void print(MATRIX M) {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			std::cout << std::setw(6) << M(i, j) << " ";
@@ -118,6 +118,6 @@ void print(MATRIX& M) {
 	std::cout << std::endl;
 }
 
-double tr(MATRIX& M) {
+double tr(MATRIX M) {
 	return M(0, 0) + M(1, 1) + M(2, 2);
 }
