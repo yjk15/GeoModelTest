@@ -13,13 +13,14 @@ public:
 	InitState(QWidget *parent = 0);
 	~InitState();
 
-	QLabel *labelStress, *labelStrain;
-	QLineEdit inputStrain[9], inputStress[9];
+	QLabel *labelStress, *labelStrain, *labelE;
+	QLineEdit inputStrain[9], inputStress[9], *inputE;
 	QPushButton *yes, *cancel;
 	MATRIX stress, strain;
+	double ee;
 
 signals:
-	void sendInitState(MATRIX, MATRIX);
+	void sendInitState(MATRIX, MATRIX, double);
 
 private slots:
 	void clickYes();

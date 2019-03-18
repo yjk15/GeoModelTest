@@ -46,7 +46,7 @@ private slots:
 	void setInitState();
 	void setEndState();
 	void setTestType(int testType);
-	void receiveInitState(MATRIX, MATRIX);
+	void receiveInitState(MATRIX, MATRIX, double);
 	void receiveEndAndReversalState(int, double, int);
 	
 	void openManual();

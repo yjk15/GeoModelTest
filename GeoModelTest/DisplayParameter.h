@@ -16,7 +16,7 @@ public:
 
 	MODEL *model;
 
-	QLabel *label;
+	QLabel *label, labelee[4];
 
 	void DisplayPara(int modelType, int testType);
 };

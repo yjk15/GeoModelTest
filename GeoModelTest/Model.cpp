@@ -5,6 +5,7 @@ MODEL::MODEL() {
 	model = 0;
 	pAtmos = 101.4;
 
+	ee = 0;
 	endAndReversalType = 0;
 	endAndReversalPoint = 0;
 	loop = 0;
@@ -36,7 +37,7 @@ void MODEL::Simulate() {
 	if (model == 2) {
 		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, z;
 		vector<double> tmpPara;
-		tmpPara.push_back(0.808);
+		tmpPara.push_back(ee);
 		for (int i = 0; i < 9; i++)
 			tmpPara.push_back(alpha.matrix[i]);
 		for (int i = 0; i < 9; i++)

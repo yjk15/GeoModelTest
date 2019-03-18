@@ -9,6 +9,7 @@ class MODEL {
 public:
 	int testType, model;
 	
+	double ee; //模拟开始时的孔隙比
 	int endAndReversalType; //设置计算结束或者反转时的状态，0-->p; 1-->q; 2-->体应变
 	double endAndReversalPoint;
 	int loop, loopCounter;

@@ -17,6 +17,8 @@ DisplayParameter::~DisplayParameter() {
 }
 
 void DisplayParameter::DisplayPara(int modelType, int testType) {
+	QString tmp;
+
 	label[0].setParent(this);
 	label[0].setText("试验类别");
 	label[0].move(20, 20);
@@ -48,6 +50,28 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	label[1].move(80, 20);
 	label[1].resize(200, 30);
 
+	labelee[0].setParent(this);
+	labelee[0].setText("模拟开始时孔隙比e");
+	labelee[0].move(300, 20);
+	labelee[0].resize(120, 30);
+
+	labelee[1].setParent(this);
+	tmp = QString::number(model->ee);
+	labelee[1].setText(tmp);
+	labelee[1].move(420, 20);
+	labelee[1].resize(90, 30);
+
+	labelee[2].setParent(this);
+	labelee[2].setText("步长");
+	labelee[2].move(300, 320);
+	labelee[2].resize(90, 30);
+
+	labelee[3].setParent(this);
+	tmp = QString::number(model->stepLength);
+	labelee[3].setText(tmp);
+	labelee[3].move(350, 320);
+	labelee[3].resize(90, 30);
+
 	label[2].setParent(this);
 	label[2].setText("初始应力(kPa)");
 	label[2].move(20, 120);
@@ -57,8 +81,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	label[3].setText("初始应变");
 	label[3].move(320, 120);
 	label[3].resize(90, 30);
-
-	QString tmp;
+	
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			label[i * 3 + j + 4].setParent(this);

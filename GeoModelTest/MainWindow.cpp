@@ -214,13 +214,14 @@ void MainWindow::drawFigure() {
 
 void MainWindow::setInitState() {
 	ui.statusBar->showMessage(tr("ÉèÖÃÆðÊ¼×´Ì¬"));
-	connect(initState, SIGNAL(sendInitState(MATRIX, MATRIX)), this, SLOT(receiveInitState(MATRIX, MATRIX)));
+	connect(initState, SIGNAL(sendInitState(MATRIX, MATRIX, double)), this, SLOT(receiveInitState(MATRIX, MATRIX, double)));
 	initState->show();
 }
 
-void MainWindow::receiveInitState(MATRIX stress, MATRIX strain) {
+void MainWindow::receiveInitState(MATRIX stress, MATRIX strain, double ee) {
 	model->stress = stress;
 	model->strain = strain;
+	model->ee = ee;
 }
 
 void MainWindow::setEndState() {
@@ -268,6 +269,8 @@ void MainWindow::loadParameter() {
 	para = file.readLine();
 	model->model = para.toInt();
 	para = file.readLine();
+	model->ee = para.toDouble();
+	para = file.readLine();
 	model->endAndReversalType = para.toInt();
 	para = file.readLine();
 	model->endAndReversalPoint = para.toDouble();
@@ -308,6 +311,8 @@ void MainWindow::saveParameter() {
 	para.append(QString::number(model->testType));
 	para.append("\n");
 	para.append(QString::number(model->model));
+	para.append("\n");
+	para.append(QString::number(model->ee));
 	para.append("\n");
 	para.append(QString::number(model->endAndReversalType));
 	para.append("\n");
@@ -351,6 +356,8 @@ void MainWindow::saveParameterInNewFile() {
 	para.append(QString::number(model->testType));
 	para.append("\n");
 	para.append(QString::number(model->model));
+	para.append("\n");
+	para.append(QString::number(model->ee));
 	para.append("\n");
 	para.append(QString::number(model->endAndReversalType));
 	para.append("\n");
