@@ -193,6 +193,62 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[33].move(80, 420);
 		label[33].resize(90, 30);
 		break;
+	case 1:
+		label[30].setParent(this);
+		label[30].setText("Kd1");
+		label[30].move(20, 370);
+		label[30].resize(90, 30);
+
+		label[31].setParent(this);
+		tmp = QString::number(model->internalParameter[0]);
+		label[31].setText(tmp);
+		label[31].move(80, 370);
+		label[31].resize(90, 30);
+
+		label[32].setParent(this);
+		label[32].setText("Kd2");
+		label[32].move(20, 420);
+		label[32].resize(90, 30);
+
+		label[33].setParent(this);
+		tmp = QString::number(model->internalParameter[1]);
+		label[33].setText(tmp);
+		label[33].move(80, 420);
+		label[33].resize(90, 30);
+
+		label[34].setParent(this);
+		label[34].setText("nd2");
+		label[34].move(20, 470);
+		label[34].resize(90, 30);
+
+		label[35].setParent(this);
+		tmp = QString::number(model->internalParameter[2]);
+		label[35].setText(tmp);
+		label[35].move(80, 470);
+		label[35].resize(90, 30);
+
+		label[36].setParent(this);
+		label[36].setText("nud");
+		label[36].move(20, 520);
+		label[36].resize(90, 30);
+
+		label[37].setParent(this);
+		tmp = QString::number(model->internalParameter[3]);
+		label[37].setText(tmp);
+		label[37].move(80, 520);
+		label[37].resize(90, 30);
+
+		label[38].setParent(this);
+		label[38].setText("gammamax");
+		label[38].move(20, 570);
+		label[38].resize(90, 30);
+
+		label[39].setParent(this);
+		tmp = QString::number(model->internalParameter[4]);
+		label[39].setText(tmp);
+		label[39].move(80, 570);
+		label[39].resize(90, 30);
+		break;
 	case 2:
 		label[30].setParent(this);
 		label[30].setText("G_0");

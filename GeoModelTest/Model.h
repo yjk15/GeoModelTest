@@ -68,4 +68,6 @@ private:
 	MATRIX getdSigma(double G, MATRIX de, double K, double depsv, double L, MATRIX RAp, double D);
 	MATRIX getdAlpha(double L, double h, MATRIX alphaThetaB, MATRIX alpha);
 	MATRIX getdz(double depsvp, MATRIX n, MATRIX z);
+
+	void IntegratorEB(bool);
 };

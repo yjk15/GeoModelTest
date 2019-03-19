@@ -123,6 +123,7 @@
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelInputParaEB.cpp" />
     <ClCompile Include="ModelParaInputDM.cpp" />
     <ClCompile Include="ModelParaInputE.cpp" />
   </ItemGroup>
@@ -141,8 +142,9 @@
     <QtMoc Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="ModelParaInputDM.h" />
+    <QtMoc Include="ModelParaInputEB.h" />
     <QtMoc Include="ModelParaInputE.h" />
+    <QtMoc Include="ModelParaInputDM.h" />
     <QtMoc Include="chart.h" />
     <QtMoc Include="InitState.h" />
     <QtMoc Include="EndAndReversalState.h" />

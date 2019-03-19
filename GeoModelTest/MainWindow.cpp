@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
 	resultFilePath = "";
 	inputModelE = new ModelParaInputE(this);
 	inputModelDM = new ModelParaInputDM(this);
+	inputModelEB = new ModelParaInputEB(this);
 	initState = new InitState(this);
 	endAndReversalState = new EndAndReversalState(this);
 	endAndReversalStateNoCycle = new EndAndReversalStateNoCycle(this);
@@ -33,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {
-	delete about, model, figureTitle;
+	delete about, model, figureTitle, inputModelE, inputModelDM, inputModelEB;
 }
 
 void MainWindow::setMenu() {
@@ -427,6 +428,10 @@ void MainWindow::setModelParameter() {
 		connect(inputModelE, SIGNAL(sendEv(double, double)), this, SLOT(receiveE(double, double)));
 		inputModelE->show();
 		break;
+	case 1:
+		connect(inputModelEB, SIGNAL(sendEBPara(double, double, double, double, double)), this, SLOT(receiveEB(double, double, double, double, double)));
+		inputModelEB->show();
+		break;
 	case 2:
 		connect(inputModelDM, SIGNAL(sendParaDM(double*)), this, SLOT(receiveDM(double*)));
 		inputModelDM->show();
@@ -439,6 +444,14 @@ void MainWindow::setModelParameter() {
 void MainWindow::receiveE(double E, double v) {
 	model->internalParameter[0] = E;
 	model->internalParameter[1] = v;
+}
+
+void MainWindow::receiveEB(double Kd1, double Kd2, double nd2, double nud, double gammamax) {
+	model->internalParameter[0] = Kd1;
+	model->internalParameter[1] = Kd2;
+	model->internalParameter[2] = nd2;
+	model->internalParameter[3] = nud;
+	model->internalParameter[4] = gammamax;
 }
 
 void MainWindow::receiveDM(double* para) {

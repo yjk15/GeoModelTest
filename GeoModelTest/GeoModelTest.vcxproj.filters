@@ -66,6 +66,9 @@
     <ClCompile Include="ModelParaInputDM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModelInputParaEB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="MainWindow.ui">
@@ -109,7 +112,10 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ModelParaInputE.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ModelParaInputEB.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

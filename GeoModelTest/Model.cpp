@@ -34,7 +34,18 @@ MODEL::~MODEL() {
 }
 
 void MODEL::Simulate() {
-	if (model == 2) {
+	if (model == 0) {
+		vector<double> tmpPara;
+		tmpPara.push_back(ee);
+		saveParameter.push_back(tmpPara);
+	}
+	else if (model == 1) {
+		vector<double> tmpPara;
+		tmpPara.push_back(ee);
+		tmpPara.push_back(internalParameter[4]);
+		saveParameter.push_back(tmpPara);
+	}
+	else if (model == 2) {
 		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, z;
 		vector<double> tmpPara;
 		tmpPara.push_back(ee);
@@ -159,6 +170,9 @@ void MODEL::Integrator(bool updateFlag) {
 	case 0:
 		IntegratorE(updateFlag);
 		break;
+	case 1:
+		IntegratorEB(updateFlag);
+		break;
 	case 2:
 		if (int(internalParameter[0]) == 1)
 			IntegratorDMExplicit(updateFlag);
@@ -245,6 +259,11 @@ bool MODEL::isReversalPoint() {
 void MODEL::IntegratorE(bool updateFlag) {
 	double E = internalParameter[0];
 	double v = internalParameter[1];
+
+	double depsv = tr(strainIncrement) / 3;
+	double ee = saveParameter.back().at(0);
+	double dee = -depsv * (1 + ee);
+
 	double mu2 = E / (1.0 + v);
 	double lam = v * mu2 / (1.0 - 2.0*v);
 	double mu = 0.50*mu2;
@@ -261,6 +280,12 @@ void MODEL::IntegratorE(bool updateFlag) {
 	stressIncrement(1, 0) = mu * strainIncrement(1, 0);
 	stressIncrement(2, 1) = mu * strainIncrement(2, 1);
 	stressIncrement(2, 0) = mu * strainIncrement(2, 0);
+
+	if (updateFlag) {
+		vector<double> tmpPara;
+		tmpPara.push_back(ee + dee);
+		saveParameter.push_back(tmpPara);
+	}
 }
 
 void MODEL::IntegratorDMExplicit(bool updateFlag) {
@@ -411,8 +436,6 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 		ee = ee + dee;
 	}
 
-	f = getF(s + ds, alpha, p + dp);
-
 	vector<double> tmpPara;
 	tmpPara.clear();
 	if (updateFlag) {
@@ -542,4 +565,50 @@ MATRIX MODEL::getdAlpha(double L, double h, MATRIX alphaThetaB, MATRIX alpha) {
 
 MATRIX MODEL::getdz(double depsvp, MATRIX n, MATRIX z) {
 	return -internalParameter[15] * relu(-depsvp) * (internalParameter[14]* n + z);
+}
+
+void MODEL::IntegratorEB(bool updateFlag) {
+	double Kd1 = internalParameter[0];
+	double Kd2 = internalParameter[1];
+	double nd2 = internalParameter[2];
+	double nud = internalParameter[3];
+
+	double depsv = tr(strainIncrement) / 3;
+	double ee = saveParameter.back().at(0);
+	double dee = -depsv * (1 + ee);
+	double gammamax = saveParameter.back().at(1);
+	double gamma = sqrt(2.0 / 3 / 3 * (pow(strain(0, 0) - strain(1, 1), 2) + pow(strain(1, 1) - strain(2, 2), 2) + pow(strain(2, 2) - strain(0, 0), 2) + 1.5*(pow(strain(0, 1), 2) + pow(strain(1, 2), 2) + pow(strain(0, 2), 2))));
+	double p = 1.0 / 3 * (stress(0, 0) + stress(1, 1) + stress(2, 2));
+
+	if (gamma > gammamax)
+		gammamax = gamma;
+	if (p / pAtmos < 0.01)
+		p = 0.01 * pAtmos;
+
+	double gammac = 2 * 0.65 * gammamax / pow(p / pAtmos, 1 - nd2);
+	double G = Kd2 * pAtmos * sqrt(p / pAtmos) / (1 + Kd1 * gammac);
+	double v = nud;
+	double E = 2 * (1 + v)*G;
+
+	double mu2 = E / (1.0 + v);
+	double lam = v * mu2 / (1.0 - 2.0*v);
+	double mu = 0.50*mu2;
+
+	stressIncrement(0, 0) = mu2 * strainIncrement(0, 0) + lam * (strainIncrement(1, 1) + strainIncrement(2, 2));
+	stressIncrement(1, 1) = mu2 * strainIncrement(1, 1) + lam * (strainIncrement(0, 0) + strainIncrement(2, 2));
+	stressIncrement(2, 2) = mu2 * strainIncrement(2, 2) + lam * (strainIncrement(0, 0) + strainIncrement(1, 1));
+
+	stressIncrement(0, 1) = mu * strainIncrement(0, 1);
+	stressIncrement(1, 2) = mu * strainIncrement(1, 2);
+	stressIncrement(0, 2) = mu * strainIncrement(0, 2);
+	stressIncrement(1, 0) = mu * strainIncrement(1, 0);
+	stressIncrement(2, 1) = mu * strainIncrement(2, 1);
+	stressIncrement(2, 0) = mu * strainIncrement(2, 0);
+
+	if (updateFlag) {
+		vector<double> tmpPara;
+		tmpPara.push_back(ee + dee);
+		tmpPara.push_back(gammamax);
+		saveParameter.push_back(tmpPara);
+	}
 }
