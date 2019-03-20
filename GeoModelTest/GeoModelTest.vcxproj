@@ -124,12 +124,14 @@
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelInputParaEB.cpp" />
+    <ClCompile Include="ModelParaInputCycliq.cpp" />
     <ClCompile Include="ModelParaInputDM.cpp" />
     <ClCompile Include="ModelParaInputE.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="chart.ui" />
     <QtUic Include="MainWindow.ui" />
+    <QtUic Include="ModelParaInputCycliq.ui" />
     <QtUic Include="ModelParaInputDM.ui" />
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +144,7 @@
     <QtMoc Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ModelParaInputCycliq.h" />
     <QtMoc Include="ModelParaInputEB.h" />
     <QtMoc Include="ModelParaInputE.h" />
     <QtMoc Include="ModelParaInputDM.h" />

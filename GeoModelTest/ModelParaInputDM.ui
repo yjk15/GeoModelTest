@@ -285,7 +285,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>z_max</string>
+    <string>z_{max}</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_21">

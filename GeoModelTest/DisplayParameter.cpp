@@ -62,7 +62,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	labelee[1].resize(90, 30);
 
 	labelee[2].setParent(this);
-	labelee[2].setText("步长");
+	labelee[2].setText("计算步长");
 	labelee[2].move(300, 320);
 	labelee[2].resize(90, 30);
 
@@ -394,7 +394,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[55].resize(90, 30);
 
 		label[56].setParent(this);
-		label[56].setText("z_max");
+		label[56].setText("z_{max}");
 		label[56].move(250, 570);
 		label[56].resize(90, 30);
 
@@ -427,6 +427,161 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 			label[61].setText("显式积分");
 		label[61].move(80, 620);
 		label[61].resize(90, 30);
+		break;
+	case 3:
+		label[30].setParent(this);
+		label[30].setText("G_0");
+		label[30].move(20, 370);
+		label[30].resize(90, 30);
+
+		label[31].setParent(this);
+		tmp = QString::number(model->internalParameter[1]);
+		label[31].setText(tmp);
+		label[31].move(80, 370);
+		label[31].resize(90, 30);
+
+		label[32].setParent(this);
+		label[32].setText("κ");
+		label[32].move(250, 370);
+		label[32].resize(90, 30);
+
+		label[33].setParent(this);
+		tmp = QString::number(model->internalParameter[2]);
+		label[33].setText(tmp);
+		label[33].move(310, 370);
+		label[33].resize(90, 30);
+
+		label[34].setParent(this);
+		label[34].setText("h");
+		label[34].move(460, 370);
+		label[34].resize(90, 30);
+
+		label[35].setParent(this);
+		tmp = QString::number(model->internalParameter[3]);
+		label[35].setText(tmp);
+		label[35].move(520, 370);
+		label[35].resize(90, 30);
+
+		label[36].setParent(this);
+		label[36].setText("M");
+		label[36].move(20, 420);
+		label[36].resize(90, 30);
+
+		label[37].setParent(this);
+		tmp = QString::number(model->internalParameter[4]);
+		label[37].setText(tmp);
+		label[37].move(80, 420);
+		label[37].resize(90, 30);
+
+		label[38].setParent(this);
+		label[38].setText("d_{re,1}");
+		label[38].move(250, 420);
+		label[38].resize(90, 30);
+
+		label[39].setParent(this);
+		tmp = QString::number(model->internalParameter[5]);
+		label[39].setText(tmp);
+		label[39].move(310, 420);
+		label[39].resize(90, 30);
+
+		label[40].setParent(this);
+		label[40].setText("d_{re,2}");
+		label[40].move(460, 420);
+		label[40].resize(90, 30);
+
+		label[41].setParent(this);
+		tmp = QString::number(model->internalParameter[6]);
+		label[41].setText(tmp);
+		label[41].move(520, 420);
+		label[41].resize(90, 30);
+
+		label[42].setParent(this);
+		label[42].setText("d_{ir}");
+		label[42].move(20, 470);
+		label[42].resize(90, 30);
+
+		label[43].setParent(this);
+		tmp = QString::number(model->internalParameter[7]);
+		label[43].setText(tmp);
+		label[43].move(80, 470);
+		label[43].resize(90, 30);
+
+		label[44].setParent(this);
+		label[44].setText("α");
+		label[44].move(250, 470);
+		label[44].resize(90, 30);
+
+		label[45].setParent(this);
+		tmp = QString::number(model->internalParameter[8]);
+		label[45].setText(tmp);
+		label[45].move(310, 470);
+		label[45].resize(90, 30);
+
+		label[46].setParent(this);
+		label[46].setText("γ_{d,r}");
+		label[46].move(460, 470);
+		label[46].resize(90, 30);
+
+		label[47].setParent(this);
+		tmp = QString::number(model->internalParameter[9]);
+		label[47].setText(tmp);
+		label[47].move(520, 470);
+		label[47].resize(90, 30);
+
+		label[48].setParent(this);
+		label[48].setText("n^p");
+		label[48].move(20, 520);
+		label[48].resize(90, 30);
+
+		label[49].setParent(this);
+		tmp = QString::number(model->internalParameter[10]);
+		label[49].setText(tmp);
+		label[49].move(80, 520);
+		label[49].resize(90, 30);
+
+		label[50].setParent(this);
+		label[50].setText("n^d");
+		label[50].move(250, 520);
+		label[50].resize(90, 30);
+
+		label[51].setParent(this);
+		tmp = QString::number(model->internalParameter[11]);
+		label[51].setText(tmp);
+		label[51].move(310, 520);
+		label[51].resize(90, 30);
+
+		label[52].setParent(this);
+		label[52].setText("λ_c");
+		label[52].move(460, 520);
+		label[52].resize(90, 30);
+
+		label[53].setParent(this);
+		tmp = QString::number(model->internalParameter[12]);
+		label[53].setText(tmp);
+		label[53].move(520, 520);
+		label[53].resize(90, 30);
+
+		label[54].setParent(this);
+		label[54].setText("e_0");
+		label[54].move(20, 570);
+		label[54].resize(90, 30);
+
+		label[55].setParent(this);
+		tmp = QString::number(model->internalParameter[13]);
+		label[55].setText(tmp);
+		label[55].move(80, 570);
+		label[55].resize(90, 30);
+
+		label[56].setParent(this);
+		label[56].setText("ξ");
+		label[56].move(250, 570);
+		label[56].resize(90, 30);
+
+		label[57].setParent(this);
+		tmp = QString::number(model->internalParameter[14]);
+		label[57].setText(tmp);
+		label[57].move(310, 570);
+		label[57].resize(90, 30);
 		break;
 	default:
 		break;

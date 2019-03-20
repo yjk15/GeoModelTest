@@ -3,7 +3,7 @@
 #pragma execution_character_set("utf-8")    // 解决汉字乱码问题，注意！！！
 
 InitState::InitState(QWidget *parent) : QDialog(parent) {
-	this->resize(600, 230);
+	this->resize(600, 280);
 	this->setWindowTitle("设置初始应力应变");
 
 	labelE = new QLabel(this);

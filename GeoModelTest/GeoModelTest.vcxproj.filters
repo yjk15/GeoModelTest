@@ -69,6 +69,9 @@
     <ClCompile Include="ModelInputParaEB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModelParaInputCycliq.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="MainWindow.ui">
@@ -78,6 +81,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="ModelParaInputDM.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="ModelParaInputCycliq.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -115,6 +121,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ModelParaInputEB.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ModelParaInputCycliq.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

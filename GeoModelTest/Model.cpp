@@ -57,6 +57,19 @@ void MODEL::Simulate() {
 			tmpPara.push_back(alphaInit.matrix[i]);
 		saveParameter.push_back(tmpPara);
 	}
+	else if (model == 3) {
+		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3);
+		vector<double> tmpPara;
+		tmpPara.push_back(ee);
+		tmpPara.push_back(0.0);
+		tmpPara.push_back(0.0);
+		tmpPara.push_back(0.0);
+		tmpPara.push_back(0.0);
+		tmpPara.push_back(0.0);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
 	
 	while (!isEndingPoint()) {
 		stressPath->push_back(stress);
@@ -179,6 +192,9 @@ void MODEL::Integrator(bool updateFlag) {
 		else if (int(internalParameter[0]) == 0)
 			IntegratorDMImplicit(updateFlag);
 		break;
+	case 3:
+		Integrator(updateFlag);
+		break;
 	default:
 		stressIncrement.clear();
 		break;
@@ -189,7 +205,7 @@ bool MODEL::isEndingPoint() {
 	double p, q, epsilonv;
 	if (testType == 2 || testType == 5) {
 		isReversalPoint();
-		if (loopCounter >= loop * 2 + 1)
+		if (loopCounter >= loop)
 			return true;
 		return false;
 	}
@@ -197,7 +213,7 @@ bool MODEL::isEndingPoint() {
 		switch (endAndReversalType) {
 		case 0:
 			p = tr(stress) / 3;
-			if (abs(p) >= abs(endAndReversalPoint)) {
+			if (abs(abs(p) - abs(endAndReversalPoint)) < 1) {
 				return true;
 			}
 			else
@@ -609,6 +625,56 @@ void MODEL::IntegratorEB(bool updateFlag) {
 		vector<double> tmpPara;
 		tmpPara.push_back(ee + dee);
 		tmpPara.push_back(gammamax);
+		saveParameter.push_back(tmpPara);
+	}
+}
+
+void MODEL::IntegratorCycliq(bool updateFlag) {
+	double ein = saveParameter.back.at(0);
+	double epsvir = saveParameter.back.at(1);
+	double epsvre = saveParameter.back.at(2);
+	double gammamono = saveParameter.back.at(3);
+	double epsvc = saveParameter.back.at(4);
+	double etam = saveParameter.back.at(5);
+	MATRIX alpha;
+	for (int i = 0; i < 9; i++) {
+		alpha.matrix[i] = saveParameter.back.at(i + 6);
+	}
+
+	double epsvir_ns, epsvre_ns, gammamonos, epsvc_ns, etamplus1;
+	MATRIX alpha_ns;
+	double G0, kappa, h, M, dre1, dre2, rdr, eta, dir, lamdac, ksi, e0, np, nd;
+	G0 = internalParameter[1];
+	kappa = internalParameter[2];
+	h = internalParameter[3];
+	M = internalParameter[4];
+	dre1 = internalParameter[5];
+	dre2 = internalParameter[6];
+	dir = internalParameter[7];
+	eta = internalParameter[8];
+	rdr = internalParameter[9];
+	np = internalParameter[10];
+	nd = internalParameter[11];
+	lamdac = internalParameter[12];
+	e0 = internalParameter[13];
+	ksi = internalParameter[14];
+	double depsv;
+	depsv = tr(strainIncrement) / 3;
+
+
+
+	ein -= depsv * (1 + ein);
+	vector<double> tmpPara;
+	if (updateFlag) {
+		tmpPara.push_back(ein);
+		tmpPara.push_back(epsvir_ns);
+		tmpPara.push_back(epsvre_ns);
+		tmpPara.push_back(gammamonos);
+		tmpPara.push_back(epsvc_ns);
+		tmpPara.push_back(etamplus1);
+		alpha = alpha_ns;
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
 		saveParameter.push_back(tmpPara);
 	}
 }

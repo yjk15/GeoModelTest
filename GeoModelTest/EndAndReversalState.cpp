@@ -28,7 +28,7 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	inputPoint->move(230, 20);
 
 	labelLoop = new QLabel(this);
-	labelLoop->setText("循环次数");
+	labelLoop->setText("反转次数");
 	labelLoop->move(20, 90);
 	labelLoop->resize(60, 30);
 

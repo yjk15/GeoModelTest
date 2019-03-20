@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
 	inputModelE = new ModelParaInputE(this);
 	inputModelDM = new ModelParaInputDM(this);
 	inputModelEB = new ModelParaInputEB(this);
+	inputModelCycliq = new ModelParaInputCycliq(this);
 	initState = new InitState(this);
 	endAndReversalState = new EndAndReversalState(this);
 	endAndReversalStateNoCycle = new EndAndReversalStateNoCycle(this);
@@ -110,6 +111,7 @@ void MainWindow::setModel() {
 	consModel->addItem(QWidget::tr("线性模型"));
 	consModel->addItem(QWidget::tr("EB模型"));
 	consModel->addItem(QWidget::tr("Dafalias and Manzari模型"));
+	consModel->addItem(QWidget::tr("Cycliq模型"));
 	connect(consModel, SIGNAL(currentIndexChanged(int)), this, SLOT(setConsModel(int)));
 
 	QPushButton *modelParameter = new QPushButton(this);
@@ -436,6 +438,10 @@ void MainWindow::setModelParameter() {
 		connect(inputModelDM, SIGNAL(sendParaDM(double*)), this, SLOT(receiveDM(double*)));
 		inputModelDM->show();
 		break;
+	case 3:
+		connect(inputModelCycliq, SIGNAL(sendParaCycliq(double*)), this, SLOT(receiveCycliq(double*)));
+		inputModelCycliq->show();
+		break;
 	default:
 		QMessageBox::information(this, tr("hello"), tr("Hello World!"));
 	}
@@ -456,6 +462,12 @@ void MainWindow::receiveEB(double Kd1, double Kd2, double nd2, double nud, doubl
 
 void MainWindow::receiveDM(double* para) {
 	for (int i = 0; i < 16; i++) {
+		model->internalParameter[i] = para[i];
+	}
+}
+
+void MainWindow::receiveCycliq(double* para) {
+	for (int i = 0; i < 15; i++) {
 		model->internalParameter[i] = para[i];
 	}
 }

@@ -24,7 +24,11 @@ public:
 
 	MATRIX stress, strain;
 	MATRIX stressIncrement, strainIncrement;
-	vector<vector<double>> saveParameter; //0存孔隙比e，1-9存alpha，10-18存z, 19-27存alphaInit
+	vector<vector<double>> saveParameter; 
+	//DM模型时，0存孔隙比e，1-9存alpha，10-18存z, 19-27存alphaInit
+	//Cycliq模型时，0存孔隙比e，1存epsvir，2存epsvre，3存gammamono，4存epsvc，5存etam，6-14存alpha
+	//注：Cycliq模型中的alpha即alphaInit
+
 
 public:
 	MODEL();
@@ -70,4 +74,6 @@ private:
 	MATRIX getdz(double depsvp, MATRIX n, MATRIX z);
 
 	void IntegratorEB(bool);
+
+	void IntegratorCycliq(bool);
 };

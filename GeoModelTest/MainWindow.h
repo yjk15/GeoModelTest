@@ -9,6 +9,7 @@
 #include "ModelParaInputE.h"
 #include "ModelParaInputEB.h"
 #include "ModelParaInputDM.h"
+#include "ModelParaInputCycliq.h"
 #include "InitState.h"
 #include "EndAndReversalState.h"
 #include "EndAndReversalStateNoCycle.h"
@@ -36,6 +37,7 @@ public:
 	ModelParaInputE *inputModelE;
 	ModelParaInputEB *inputModelEB;
 	ModelParaInputDM *inputModelDM;
+	ModelParaInputCycliq *inputModelCycliq;
 	InitState *initState;
 	EndAndReversalState *endAndReversalState;
 	EndAndReversalStateNoCycle *endAndReversalStateNoCycle;
@@ -63,6 +65,7 @@ private slots:
 	void receiveE(double, double);
 	void receiveEB(double, double, double, double, double);
 	void receiveDM(double*);
+	void receiveCycliq(double*);
 	
 	void setStepLength(int l);
 	void checkParameter();
