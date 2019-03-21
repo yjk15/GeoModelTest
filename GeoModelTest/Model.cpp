@@ -630,15 +630,19 @@ void MODEL::IntegratorEB(bool updateFlag) {
 }
 
 void MODEL::IntegratorCycliq(bool updateFlag) {
-	double ein = saveParameter.back.at(0);
-	double epsvir = saveParameter.back.at(1);
-	double epsvre = saveParameter.back.at(2);
-	double gammamono = saveParameter.back.at(3);
-	double epsvc = saveParameter.back.at(4);
-	double etam = saveParameter.back.at(5);
+	double pmin = 0.5;
+	//Cycliq Model中最小的p值
+	double tolerance = 1e-4;
+
+	double ein = saveParameter.back().at(0);
+	double epsvir = saveParameter.back().at(1);
+	double epsvre = saveParameter.back().at(2);
+	double gammamono = saveParameter.back().at(3);
+	double epsvc = saveParameter.back().at(4);
+	double etam = saveParameter.back().at(5);
 	MATRIX alpha;
 	for (int i = 0; i < 9; i++) {
-		alpha.matrix[i] = saveParameter.back.at(i + 6);
+		alpha.matrix[i] = saveParameter.back().at(i + 6);
 	}
 
 	double epsvir_ns, epsvre_ns, gammamonos, epsvc_ns, etamplus1;
@@ -660,10 +664,465 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 	ksi = internalParameter[14];
 	double depsv;
 	depsv = tr(strainIncrement) / 3;
+	double Mfc = M, Mdc = M;
+	double sinphi = 3.0 * Mfc / (Mfc + 6.0);
+	double tanphi = sinphi / sqrt(1.0 - sinphi * sinphi);
+	double Mfo = 2 * sqrt(3.0) * tanphi / sqrt(3.0 + 4.0 * tanphi * tanphi);
+	double epsvir_n = epsvir;
+	double epsvre_n = epsvre;
+	double epsvc_n = epsvc;
 
+	MATRIX dev_strain, dev_strain_n, ddev_strain_p, dev_stress, dev_stress_n, normal, pass, rbar, rbar0, rbar1, r1, rd, stress_n = stress, strain_n = strain, strain_nplus1 = strain_n + strainIncrement, alpha_n = alpha, stress_pass, ZeroTensor, alpha_nplus1, r, r_nplus1;
 
+	double phi = 0, phi_n = 0, trace = 0, trace_n = 0, dtracep = 0, iconv = 0.0, lambdamax = 0, lambdamin = 0, dlambda, chi = 0, sin3theta, beta0, beta1, Fb0, Fb1, Fb = 0, gtheta, intm, beta, ec, psi;
+	double N, H, loadindex, rou, roubar, eta_nplus1, Dre_n, Dir_n, D;
+	int isub, sub1, sub2, sub;
 
-	ein -= depsv * (1 + ein);
+	//compression as positive
+	stress_n = -1.0 * stress_n;
+	strain_nplus1 = -1.0 * strain_nplus1;
+	strain_n = -1.0 * strain_n;
+
+	//compute the deviatoric stress of last step
+	double p_n = 1.0 / 3 * tr(stress_n);
+	dev_stress_n = stress_n;
+	for (int i = 0; i < 3; i++)
+		dev_stress_n(i, i) -= (p_n);
+	if ((p_n) < pmin)
+	{
+		p_n = pmin;
+	}
+
+	trace = tr(strain_nplus1);
+	trace_n = tr(strain_n);
+	dev_strain_n = strain_n;
+	for (int i = 0; i < 3; i++)
+		dev_strain_n(i, i) -= (1.0 / 3 * trace_n);
+	dev_strain = strain_nplus1;
+	for (int i = 0; i < 3; i++)
+		dev_strain(i, i) -= (1.0 / 3 * trace);
+
+	double en = ein;//void ratio
+
+	// --------------(I)Initialize-------------------------------------
+	alpha_nplus1 = alpha_n;
+
+	double epsvir_nplus1 = epsvir_n;
+	double epsvre_nplus1 = epsvre_n;
+	double epsvc_nplus1 = epsvc_n + trace - trace_n;
+	etamplus1 = etam;
+	double lambda = 0.0;
+	double p0 = p_n;
+	double epsvc0 = -2 * kappa / (1 + ein)*(sqrt(p0 / pAtmos) - sqrt(pmin / pAtmos));
+	r = dev_stress_n / (p_n);
+	ec = e0 - lamdac * pow(p_n / pAtmos, ksi);
+	psi = en - ec;
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			ddev_strain_p(i, j) = 0.0;
+
+	// --------------Trial Before Substep-------------------------------------
+	double p_nplus1;
+	if (epsvc_nplus1 > epsvc0)
+		p_nplus1 = pAtmos * pow(sqrt(p0 / pAtmos) + (1 + ein) / 2.0 / kappa * epsvc_nplus1, 2);
+	else
+		p_nplus1 = pmin;
+	double K, G;
+	K = (1 + ein) / kappa * pAtmos*sqrt((p_n + p_nplus1) / 2.0 / pAtmos);
+	G = G0 * pAtmos*(pow((2.97 - ein), 2) / (1 + ein))*sqrt((p_n + p_nplus1) / 2.0 / pAtmos);
+	dev_stress = dev_stress_n + 2.0 * G * (dev_strain - dev_strain_n);
+
+	r_nplus1 = dev_stress / p_nplus1;
+	sub1 = (int)(sqrt(1.5)*sqrt((r_nplus1 - r) % (r_nplus1 - r)) / 0.05) + 1;
+	sub2 = (int)(sqrt(2.0 / 3 *((dev_strain - dev_strain_n) % (dev_strain - dev_strain_n))) / 0.001) + 1;
+	sub = sub1;
+	if (sub2 > sub1)
+		sub = sub2;
+	if (sub > 100)
+		sub = 100;
+	alpha_ns = alpha_n;
+	epsvir_ns = epsvir_n;
+	epsvre_ns = epsvre_n;
+	epsvc_ns = epsvc_n;
+	gammamonos = gammamono;
+	double eta_n;
+	for (isub = 0; isub < sub; isub++)
+	{
+		// --------------(I)Initialize-------------------------------------
+		alpha_nplus1 = alpha_ns;
+		epsvir_nplus1 = epsvir_ns;
+		epsvre_nplus1 = epsvre_ns;
+		epsvc_nplus1 = epsvc_ns + (trace - trace_n) / sub;
+		r = dev_stress_n / (p_n);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				ddev_strain_p(i, j) = 0.0;
+		dtracep = 0.0;
+		lambda = 0.0;
+		p0 = p_n;
+		epsvc0 = -2 * kappa / (1 + ein)*(sqrt(p0 / pAtmos) - sqrt(pmin / pAtmos));
+		if (epsvc_nplus1 < epsvc0)
+		{
+			p_nplus1 = pmin;
+		}
+		else
+		{
+			p_nplus1 = pAtmos * pow(sqrt(p0 / pAtmos) + (1 + ein) / 2.0 / kappa * epsvc_nplus1, 2);
+
+		}
+		K = (1 + ein) / kappa * pAtmos*sqrt((p_n + p_nplus1) / 2.0 / pAtmos);
+		G = G0 * pAtmos*(pow((2.97 - ein), 2) / (1 + ein))*sqrt((p_n + p_nplus1) / 2.0 / pAtmos);
+		dev_stress = dev_stress_n + 2.0 * G*(dev_strain - dev_strain_n) / sub;
+		r_nplus1 = dev_stress / p_nplus1;
+		eta_n = sqrt(1.5) * sqrt((r % r));
+
+		//		r1=r/doublecontraction(r,r);
+		if ((r % r) < tolerance)
+		{
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 3; j++)
+					r1(i, j) = 0.0;
+			r1(0, 0) = -1.0 / sqrt(6.0);
+			r1(1, 1) = -1.0 / sqrt(6.0);
+			r1(2, 2) = 2.0 / sqrt(6.0);
+		}
+		else
+		{
+			r1 = r / sqrt((r % r));
+		}
+		pass = r1 * r1*r1;
+		sin3theta = -sqrt(6.0)*tr(pass);
+		if (sin3theta > 1.0)
+			sin3theta = 1.0;
+		else if (sin3theta < -1.0)
+			sin3theta = -1.0;
+		gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+
+		if (eta_n / gtheta > etamplus1)
+		{
+			etamplus1 = eta_n / gtheta;
+		}
+		if (eta_n / gtheta > Mfc*exp(-np * psi) - tolerance)
+		{
+			etamplus1 = eta_n / gtheta;
+		}
+
+		beta0 = 0.0;
+		beta1 = 1.0;
+		rbar0 = alpha_ns + beta0 * (r - alpha_ns);
+		rbar1 = alpha_ns + beta1 * (r - alpha_ns);
+		if ((r % r) < tolerance && (alpha_ns % alpha_ns) < tolerance)
+		{
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 3; j++)
+					normal(i, j) = 0.0;
+			normal(0, 0) = -1 / sqrt(6.0);
+			normal(1, 1) = -1.0 / sqrt(6.0);
+			normal(2, 2) = 2.0 / sqrt(6.0);
+			rbar = sqrt(2.0 / 3) * Mfc*exp(-np * psi)*normal;
+			beta = 1.0e20;
+		}
+		else if (sqrt((r - alpha_ns) % (r - alpha_ns)) < tolerance)
+		{
+			normal = r1;
+			rbar = sqrt(2.0 / 3) * etamplus1*sin3theta*normal;
+			beta = 1.0e20;
+		}
+		else
+		{
+			if ((rbar0 % rbar0) < tolerance)
+			{
+				beta0 = 0.01;
+				rbar0 = alpha_ns + beta0 * (r - alpha_ns);
+			}
+			normal = rbar0 / sqrt((rbar0 % rbar0));
+			pass = normal * normal*normal;
+			sin3theta = -sqrt(6.0)*tr(pass);
+			if (sin3theta > 1.0)
+				sin3theta = 1.0;
+			else if (sin3theta < -1.0)
+				sin3theta = -1.0;
+			gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+			Fb0 = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar0) % normal;
+			normal = rbar1 / sqrt(rbar1 % rbar1);
+			pass = normal * normal*normal;
+			sin3theta = -sqrt(6.0)*tr(pass);
+			if (sin3theta > 1.0)
+				sin3theta = 1.0;
+			else if (sin3theta < -1.0)
+				sin3theta = -1.0;
+			gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+			Fb1 = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar1) % normal;
+			if (abs(Fb0) <= 1.0e-5)
+			{
+				rbar = rbar0;
+				beta = beta0;
+			}
+			else if (abs(Fb1) <= 1.0e-5)
+			{
+				rbar = rbar1;
+				beta = beta1;
+			}
+			else
+			{
+				while (Fb0*Fb1 > 0)
+				{
+					beta0 = beta1;
+					beta1 = 2 * beta1;
+					rbar0 = alpha_ns + beta0 * (r - alpha_ns);
+					rbar1 = alpha_ns + beta1 * (r - alpha_ns);
+					normal = rbar0 / sqrt((rbar0 % rbar0));
+					pass = normal * normal*normal;
+					sin3theta = -sqrt(6.0)*tr(pass);
+					if (sin3theta > 1.0)
+						sin3theta = 1.0;
+					else if (sin3theta < -1.0)
+						sin3theta = -1.0;
+					gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+					Fb0 = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar0) % normal;
+					normal = rbar1 / sqrt(rbar1 % rbar1);
+					pass = normal * normal*normal;
+					sin3theta = -sqrt(6.0)*tr(pass);
+					if (sin3theta > 1.0)
+						sin3theta = 1.0;
+					else if (sin3theta < -1.0)
+						sin3theta = -1.0;
+					gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+					Fb1 = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar1) % normal;
+				}
+				if (abs(Fb0) <= 1.0e-5)
+				{
+					rbar = rbar0;
+					beta = beta0;
+				}
+				else if (abs(Fb1) <= 1.0e-5)
+				{
+					rbar = rbar1;
+					beta = beta1;
+				}
+				else
+				{
+					beta = beta1 - Fb1 * (beta1 - beta0) / (Fb1 - Fb0);
+					rbar = alpha_ns + beta * (r - alpha_ns);
+					normal = rbar / sqrt(rbar % rbar);
+					pass = normal * normal*normal;
+					sin3theta = -sqrt(6.0)*tr(pass);
+					if (sin3theta > 1.0)
+						sin3theta = 1.0;
+					else if (sin3theta < -1.0)
+						sin3theta = -1.0;
+					gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+					Fb = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar) % normal;
+					intm = 1;
+					while (abs(Fb) > 1.0e-6)
+					{
+						if (Fb*Fb1 < 0)
+						{
+							beta0 = beta1;
+							Fb0 = Fb1;
+							beta1 = beta;
+							Fb1 = Fb;
+						}
+						else
+						{
+							Fb0 = Fb1 * Fb0 / (Fb1 + Fb);
+							beta1 = beta;
+							Fb1 = Fb;
+						}
+						beta = beta1 - Fb1 * (beta1 - beta0) / (Fb1 - Fb0);
+						rbar = alpha_ns + beta * (r - alpha_ns);
+						normal = rbar / sqrt(rbar % rbar);
+						pass = normal * normal*normal;
+						sin3theta = -sqrt(6.0)*tr(pass);
+						if (sin3theta > 1.0)
+							sin3theta = 1.0;
+						else if (sin3theta < -1.0)
+							sin3theta = -1.0;
+						gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+						Fb = (sqrt(2.0 / 3)*etamplus1*gtheta*normal - rbar) % normal;
+						intm = intm + 1;
+					}
+				}
+			}
+
+		}
+		normal = sqrt(1.5) * normal;
+		N = r % normal;
+
+		// --------------(III)Loading/Unloading-------------------------------------
+
+		phi = ((dev_stress - dev_stress_n) % normal) - (p_nplus1 - p_n)*N;
+		phi_n = (r_nplus1 - r) % normal;
+		// --------------(IV)Unloading-------------------------------------
+		if (phi < tolerance || phi_n < tolerance)
+		{
+			gammamonos = 0.0;
+			alpha_nplus1 = r;
+			//epsvirpr=epsvir_n;
+		}
+		// --------------(V)Loading-------------------------------------
+		else if (phi > tolerance&&phi_n > tolerance)
+		{
+			epsvc_nplus1 = epsvc_ns + (trace - trace_n) / sub - dtracep;
+			loadindex = 0.0;
+			lambda = 0.0;
+			lambdamin = 0.0;
+			lambdamax = 0.0;
+			rou = sqrt(1.5) * sqrt((r - alpha_ns) % (r - alpha_ns));
+
+			roubar = sqrt(1.5) * sqrt((rbar - alpha_ns) % (rbar - alpha_ns));
+			//if (roubar/rou!=beta)
+			//{
+
+			   // opserr<<"roubar="<<roubar<<"\t";
+			   // opserr<<"rou="<<rou<<"\t";
+			   // opserr<<"beta="<<beta<<"\t";
+			   // //opserr<<"eta_nplus1="<<eta_nplus1<<"\t";
+			   // opserr<<"rbar-alpha_ns-beta*(r-alpha_ns)="<<rbar-alpha_ns-beta*(r-alpha_ns)<<"\n";
+			//}
+			if (roubar > tolerance)
+			{
+				H = 2.0 / 3 * h*G*gtheta*exp(-np * psi)*(Mfc*exp(-np * psi) / (etamplus1 + tolerance) *roubar / (rou + tolerance) - 1.0);
+				if (H < tolerance && H >= 0)
+				{
+					H = tolerance;
+				}
+				if (H > -tolerance && H < 0)
+				{
+					H = -tolerance;
+				}
+				eta_nplus1 = sqrt(1.5) * sqrt(r_nplus1 % r_nplus1);
+				rd = Mdc * exp(nd*psi) / etamplus1 * rbar;
+				Dre_n = dre1 * sqrt(2.0 / 3)*((rd - r) % normal);
+				if (epsvir_ns > tolerance)
+					chi = -dir * epsvre_ns / epsvir_ns;
+				else
+					chi = 0.0;
+				if (chi > 1.)
+					chi = 1.;
+				if (Dre_n > 0.0)
+				{
+					Dre_n = pow(-dre2 * chi, 2) / p_n;
+					if (-epsvre_ns < tolerance)
+						Dre_n = 0.0;
+				}
+				if (Dre_n > 0)
+				{
+					if (psi >= 0)
+					{
+						Dir_n = dir * exp(nd*psi - eta * epsvir_ns)*(sqrt(2.0 / 3)*((rd - r) % normal))*exp(chi);
+					}
+					else
+					{
+						Dir_n = dir * exp(nd*psi - eta * epsvir_ns)*(sqrt(2.0 / 3)*((rd - r) % normal)*exp(chi) + pow(rdr*(1 - exp(nd*psi)) / (rdr*(1 - exp(nd*psi)) + gammamonos), 2));
+					}
+				}
+				else
+				{
+					if (psi >= 0)
+					{
+						Dir_n = 0.0;
+					}
+					else
+					{
+						Dir_n = dir * exp(nd*psi - eta * epsvir_ns)*(pow(rdr*(1 - exp(nd*psi)) / (rdr*(1 - exp(nd*psi)) + gammamonos), 2));
+					}
+				}
+
+				D = Dir_n + Dre_n;
+
+				int wr = 1;
+				iconv = 0.0;
+				do
+				{
+					if (iconv == 0.0)
+					{
+						//dlambda=phi/(H+2*G-K*D*N);
+						dlambda = phi / abs(H + 2 * G - K * D*N);
+						lambda += dlambda;
+					}
+					else
+					{
+						lambda = 0.5*(lambdamax + lambdamin);
+					}
+					loadindex = H * lambda;
+					dtracep = lambda * D;
+					ddev_strain_p = lambda * normal;
+					epsvc_nplus1 = epsvc_ns + (trace - trace_n) / sub - dtracep;
+					if (epsvc_nplus1 < epsvc0)
+					{
+						p_nplus1 = pmin;
+						epsvc_nplus1 = epsvc0;
+					}
+					else
+					{
+						p_nplus1 = pAtmos * pow(sqrt(p0 / pAtmos) + (1 + ein) / 2.0 / kappa * epsvc_nplus1, 2);
+
+					}
+					G = G0 * pAtmos*(pow((2.97 - ein), 2) / (1 + ein))*sqrt((p_n + p_nplus1) / 2.0 / pAtmos);
+					dev_stress = dev_stress_n + 2 * G*((dev_strain - dev_strain_n) / sub - ddev_strain_p);
+
+					phi = ((dev_stress - dev_stress_n) % normal) - (p_nplus1 - p_n)*N - loadindex;
+					//phi=doublecontraction(dev_stress-dev_stress_n,normal) / sqrt(1.5) -(p_nplus1-p_n)*N / sqrt(1.5)-loadindex;
+					if (phi < -tolerance)
+					{
+						iconv = 1.0;
+						lambdamax = lambda;
+					}
+					if (phi > tolerance && iconv == 1.0)
+						lambdamin = lambda;
+					wr = wr + 1;
+					epsvir_nplus1 = lambda * Dir_n + epsvir_ns;
+					epsvre_nplus1 = lambda * Dre_n + epsvre_ns;
+
+				} while (abs(phi) > tolerance);
+				//cout << H << "\t" << G << "\t" << K << "\t" << D << "\t" << N << endl;
+				gammamonos = gammamonos + lambda;
+			}
+
+		}
+
+		r_nplus1 = dev_stress / p_nplus1;
+		eta_nplus1 = sqrt(1.5) * sqrt(r_nplus1 % r_nplus1);
+		if (eta_nplus1 >= Mfc * exp(-np * psi) / (1.0 + Mfc / 3.0) - tolerance)
+		{
+			r1 = r_nplus1 / sqrt(r_nplus1 % r_nplus1);
+			pass = r1 * r1*r1;
+			sin3theta = -sqrt(6.0)*tr(pass);
+			if (sin3theta > 1.0)
+				sin3theta = 1.0;
+			else if (sin3theta < -1.0)
+				sin3theta = -1.0;
+			gtheta = 1 / (1 + Mfc / 6.0*(sin3theta + sin3theta * sin3theta) + (Mfc - Mfo) / Mfo * (1 - sin3theta * sin3theta));
+			r1 = sqrt(2.0 / 3) * Mfc*exp(-np * psi)*gtheta*r1;
+			if ((r1 % r1) - (r_nplus1 % r_nplus1) < tolerance)
+			{
+				intm = sqrt((r_nplus1 % r_nplus1)) / sqrt(r1 % r1) + tolerance;
+				dev_stress = dev_stress / intm;
+			}
+			r_nplus1 = dev_stress / p_nplus1;
+			eta_nplus1 = sqrt(1.5) * sqrt(r_nplus1 % r_nplus1);
+		}
+
+		alpha_ns = alpha_nplus1;
+		epsvir_ns = epsvir_nplus1;
+		epsvre_ns = epsvre_nplus1;
+
+		epsvc_ns = epsvc_ns - epsvc_nplus1 + (trace - trace_n) / sub - dtracep;
+		epsvc_nplus1 = epsvc_ns;
+		p_n = p_nplus1;
+		dev_stress_n = dev_stress;
+	}
+
+	stress_pass = dev_stress;
+	for (int i = 0; i < 3; i++)
+	{
+		stress_pass(i, i) += (p_n);
+	}
+	stress_pass = ZeroTensor - stress_pass; // from positive to negative
+	stressIncrement = stress_pass - stress; // from positive to negative
+
+	ein -= depsv * (1 + en);
 	vector<double> tmpPara;
 	if (updateFlag) {
 		tmpPara.push_back(ein);

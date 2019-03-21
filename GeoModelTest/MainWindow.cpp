@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	this->resize(500, 600);
 	this->setWindowTitle("砂土本构模型试验");
+	this->setWindowIcon(QIcon("./GMT.ico"));
 
 	setMenu();
 	ui.mainToolBar->hide();
