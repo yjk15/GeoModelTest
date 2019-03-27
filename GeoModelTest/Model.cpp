@@ -453,7 +453,7 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 			RAp = getRAp(B, C, n);
 			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
 			f = getF(s + ds, alpha + dAlpha, p + dp);
-			if (abs(f) < 1e-7)
+			if (abs(f) < stepLength / 10)
 				break;
 
 			tmp = -2 * G * RAp + D * K * alpha - 2.0 / 3 * p * h * (alphaThetaB - alpha);

@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include <QString>
+#include <ctime>
 #include "ui_MainWindow.h"
 #include "about.h"
 #include "Model.h"

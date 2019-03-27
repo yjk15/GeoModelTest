@@ -134,6 +134,8 @@ void MainWindow::calculate() {
 	step->setFont(QFont("Timers", 11, QFont::Courier));
 	step->resize(120, 30);
 	step->move(80, 265);
+	step->addItem("1e-3");
+	step->addItem("1e-4");
 	step->addItem("1e-5");
 	step->addItem("5e-6");
 	step->addItem("1e-6");
@@ -477,18 +479,24 @@ void MainWindow::setStepLength(int l) {
 	ui.statusBar->showMessage(tr("设置步长"));
 	switch (l) {
 	case 0:
-		this->model->stepLength = 1e-5;
+		this->model->stepLength = 1e-3;
 		break;
 	case 1:
-		this->model->stepLength = 5e-6;
+		this->model->stepLength = 1e-4;
 		break;
 	case 2:
-		this->model->stepLength = 1e-6;
+		this->model->stepLength = 1e-5;
 		break;
 	case 3:
-		this->model->stepLength = 5e-7;
+		this->model->stepLength = 5e-6;
 		break;
 	case 4:
+		this->model->stepLength = 1e-6;
+		break;
+	case 5:
+		this->model->stepLength = 5e-7;
+		break;
+	case 6:
 		this->model->stepLength = 1e-7;
 		break;
 	default:
@@ -505,9 +513,20 @@ void MainWindow::checkParameter() {
 }
 
 void MainWindow::beginCalculate() {
-	ui.statusBar->showMessage(tr("计算中，请勿进行其他操作"));
+	QMessageBox *message = new QMessageBox(QMessageBox::Information, "计算中", tr("正在计算……"), QMessageBox::NoButton, this);
+	message->show();
+	clock_t start, finish;
+	double cost;
+	QString tmp, out;
+	start = clock();
 	model->Simulate();
-	ui.statusBar->showMessage(tr("计算完成"));
+	finish = clock();
+	cost = (double)(finish - start) / CLOCKS_PER_SEC;
+	tmp = QString::number(cost);
+	out = tr("计算完成，共耗时") + tmp + "s";
+	message->close();
+	delete message;
+	ui.statusBar->showMessage(out);
 }
 
 void MainWindow::setFigureTitle() {
