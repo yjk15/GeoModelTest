@@ -123,6 +123,9 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	case 2:
 		label[24].setText("体应变");
 		break;
+	case 3:
+		label[24].setText("偏应变");
+		break;
 	default:
 		break;
 	}

@@ -259,3 +259,7 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/GeoModelTest/新建文本文档.txt
+/GeoModelTest/teh2.txt
+/GeoModelTest/teh1.txt
+*.txt

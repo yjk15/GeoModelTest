@@ -324,7 +324,7 @@ void MainWindow::saveParameter() {
 	para.append("\n");
 	para.append(QString::number(model->loop));
 	para.append("\n");
-	para.append(QString::number(model->loopCounter));
+	para.append(QString::number(0));
 	para.append("\n");
 	para.append(QString::number(model->direction));
 	para.append("\n");
@@ -369,7 +369,7 @@ void MainWindow::saveParameterInNewFile() {
 	para.append("\n");
 	para.append(QString::number(model->loop));
 	para.append("\n");
-	para.append(QString::number(model->loopCounter));
+	para.append(QString::number(0));
 	para.append("\n");
 	para.append(QString::number(model->direction));
 	para.append("\n");

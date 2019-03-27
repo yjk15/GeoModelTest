@@ -20,6 +20,7 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	inputType->addItem("p");
 	inputType->addItem("q");
 	inputType->addItem("体应变");
+	inputType->addItem("偏应变");
 	inputType->resize(80, 30);
 	inputType->move(120, 20);
 
