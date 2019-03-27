@@ -6,6 +6,10 @@ EndAndReversalStateNoCycle::EndAndReversalStateNoCycle(QWidget *parent) : QDialo
 	this->setWindowTitle("设置末状态");
 	this->resize(330, 120);
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	labelType = new QLabel(this);
 	labelType->setText("选择末状态类别");
 	labelType->move(20, 20);
@@ -20,6 +24,8 @@ EndAndReversalStateNoCycle::EndAndReversalStateNoCycle(QWidget *parent) : QDialo
 	inputType->addItem("p");
 	inputType->addItem("q");
 	inputType->addItem("体应变");
+	inputType->addItem("偏应变");
+	inputType->addItem("步数");
 	inputType->resize(80, 30);
 	inputType->move(120, 20);
 

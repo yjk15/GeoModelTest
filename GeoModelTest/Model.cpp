@@ -202,7 +202,7 @@ void MODEL::Integrator(bool updateFlag) {
 }
 
 bool MODEL::isEndingPoint() {
-	double p, q, epsilonv;
+	double p, q, epsilonv, epsilonq;
 	if (testType == 2 || testType == 5) {
 		isReversalPoint();
 		if (loopCounter >= loop)
@@ -233,6 +233,17 @@ bool MODEL::isEndingPoint() {
 				return true;
 			return false;
 
+		case 3:
+			epsilonq = strain(2, 2) - strain(0, 0);
+			if (abs(epsilonq) >= abs(endAndReversalPoint))
+				return true;
+			return false;
+
+		case 4:
+			stepCounter += 1;
+			if (stepCounter >= endAndReversalPoint)
+				return true;
+			return false;
 		default:
 			return true;
 		}

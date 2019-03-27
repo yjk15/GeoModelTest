@@ -7,6 +7,11 @@ ABOUT::ABOUT(QWidget *parent) : QDialog(parent){
 	this->resize(280, 110);
 	this->setWindowTitle("¹ØÓÚ");
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
+
 	label1 = new QLabel(this);
 	label2 = new QLabel(this);
 	label3 = new QLabel(this);

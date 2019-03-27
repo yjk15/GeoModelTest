@@ -6,6 +6,10 @@ ModelParaInputEB::ModelParaInputEB(QWidget *parent) : QDialog(parent) {
 	this->resize(240, 330);
 	this->setWindowTitle("设置EB模型参数");
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	label0 = new QLabel(this);
 	label0->resize(60, 30);
 	label0->move(20, 20);

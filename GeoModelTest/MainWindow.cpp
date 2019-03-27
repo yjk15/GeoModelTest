@@ -184,7 +184,16 @@ void MainWindow::drawFigure() {
 	axisX->addItem("stress11");
 	axisX->addItem("stress22");
 	axisX->addItem("stress33");
+	axisX->addItem("stress13");
 	axisX->addItem("q");
+	axisX->addItem("p");
+	axisX->addItem("strain11");
+	axisX->addItem("strain22");
+	axisX->addItem("strain33");
+	axisX->addItem("strain13");
+	axisX->addItem("εq");
+	axisX->addItem("εv");
+	axisX->addItem("e");
 	connect(axisX, SIGNAL(currentIndexChanged(int)), this, SLOT(setAxisX(int)));
 
 	QLabel *label3 = new QLabel(this);
@@ -197,10 +206,19 @@ void MainWindow::drawFigure() {
 	axisY->setFont(QFont("Timers", 11, QFont::Courier));
 	axisY->resize(120, 30);
 	axisY->move(335, 480);
+	axisY->addItem("stress11");
+	axisY->addItem("stress22");
+	axisY->addItem("stress33");
+	axisY->addItem("stress13");
+	axisY->addItem("q");
+	axisY->addItem("p");
 	axisY->addItem("strain11");
 	axisY->addItem("strain22");
 	axisY->addItem("strain33");
-	axisY->addItem("epsilonq"); 
+	axisY->addItem("strain13");
+	axisY->addItem("εq"); 
+	axisY->addItem("εv");
+	axisY->addItem("e");
 	connect(axisY, SIGNAL(currentIndexChanged(int)), this, SLOT(setAxisY(int)));
 
 	QPushButton *draw = new QPushButton(this);
@@ -285,6 +303,8 @@ void MainWindow::loadParameter() {
 	para = file.readLine();
 	model->loopCounter = para.toInt();
 	para = file.readLine();
+	model->stepCounter = para.toInt();
+	para = file.readLine();
 	QVariant tmp = para;
 	model->direction = tmp.toBool();
 	para = file.readLine();
@@ -308,6 +328,7 @@ void MainWindow::loadParameter() {
 	para = file.readLine();
 	*model->figureTitle = para;
 	file.close();
+	ui.statusBar->showMessage(tr("参数已加载"));
 }
 
 void MainWindow::saveParameter() {
@@ -328,6 +349,8 @@ void MainWindow::saveParameter() {
 	para.append("\n");
 	para.append(QString::number(0));
 	para.append("\n");
+	para.append(QString::number(0));
+	para.append("\n");
 	para.append(QString::number(model->direction));
 	para.append("\n");
 	para.append(QString::number(model->axisX));
@@ -354,6 +377,7 @@ void MainWindow::saveParameter() {
 	file.open(QIODevice::WriteOnly);
 	file.write(para.toUtf8());
 	file.close();
+	ui.statusBar->showMessage(tr("参数已存储"));
 }
 
 void MainWindow::saveParameterInNewFile() {
@@ -370,6 +394,8 @@ void MainWindow::saveParameterInNewFile() {
 	para.append(QString::number(model->endAndReversalPoint));
 	para.append("\n");
 	para.append(QString::number(model->loop));
+	para.append("\n");
+	para.append(QString::number(0));
 	para.append("\n");
 	para.append(QString::number(0));
 	para.append("\n");
@@ -399,6 +425,7 @@ void MainWindow::saveParameterInNewFile() {
 	file.open(QIODevice::WriteOnly);
 	file.write(para.toUtf8());
 	file.close();
+	ui.statusBar->showMessage(tr("参数已存储于新文件"));
 }
 
 void MainWindow::saveResult() {
@@ -419,6 +446,7 @@ void MainWindow::saveResult() {
 	}
 	file.write(result.toUtf8());
 	file.close();
+	ui.statusBar->showMessage(tr("计算结果已存储"));
 }
 
 void MainWindow::setConsModel(int model) {

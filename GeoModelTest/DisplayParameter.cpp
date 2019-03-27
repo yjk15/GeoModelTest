@@ -7,6 +7,10 @@ DisplayParameter::DisplayParameter(MODEL *m, QWidget *parent) : QDialog(parent) 
 	this->resize(600, 660);
 	this->setWindowTitle("检查参数");
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	model = m;
 	label = new QLabel[70];
 	DisplayPara(model->model, model->testType);
@@ -126,6 +130,9 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	case 3:
 		label[24].setText("偏应变");
 		break;
+	case 4:
+		label[24].setText("步数");
+		break;
 	default:
 		break;
 	}
@@ -140,7 +147,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 
 	if (model->testType == 2 || model->testType == 5) {
 		label[26].setParent(this);
-		label[26].setText("循环次数");
+		label[26].setText("反转次数");
 		label[26].move(20, 270);
 		label[26].resize(60, 30);
 

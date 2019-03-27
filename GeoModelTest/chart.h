@@ -28,8 +28,7 @@ private:
 	Ui::chartClass ui;
 
 private:
-	double getAxisX(int axisX, int i);
-	double getAxisY(int axisY, int i);
+	double getAxis(int axis, int i);
 	QString getAxisXTitle(int axisX);
 	QString getAxisYTitle(int axisY);
 };

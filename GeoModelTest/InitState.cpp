@@ -6,6 +6,10 @@ InitState::InitState(QWidget *parent) : QDialog(parent) {
 	this->resize(600, 280);
 	this->setWindowTitle("设置初始应力应变");
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	labelE = new QLabel(this);
 	labelE->setText("模拟开始时的孔隙比e");
 	labelE->move(20, 20);

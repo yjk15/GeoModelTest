@@ -9,6 +9,10 @@ ModelParaInputCycliq::ModelParaInputCycliq(QWidget *parent) : QDialog(parent) {
 	input = new QLineEdit[14];
 	//method = new QComboBox(this);
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	for (int i = 0; i < 14; i++) {
 		input[i].setParent(this);
 		input[i].move(120, 20 + 30 * i);

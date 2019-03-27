@@ -57,7 +57,7 @@ void Chart::setNewChart(){
 	axisY = new QValueAxis;
 
 	for (int i = 0; i < model->stressPath->size(); i++)
-		series->append(getAxisX(model->axisX, i), getAxisY(model->axisY, i));
+		series->append(getAxis(model->axisX, i), getAxis(model->axisY, i));
 
 	chart->addSeries(series);
 	chart->legend()->hide();
@@ -79,8 +79,8 @@ void Chart::setNewChart(){
 	widget->setChart(chart);
 }
 
-double Chart::getAxisX(int axisX, int i) {
-	switch (axisX) {
+double Chart::getAxis(int axis, int i) {
+	switch (axis) {
 	case 0:
 		return model->stressPath->at(i)(0, 0);
 	case 1:
@@ -88,22 +88,25 @@ double Chart::getAxisX(int axisX, int i) {
 	case 2:
 		return model->stressPath->at(i)(2, 2);
 	case 3:
-		return model->stressPath->at(i)(0, 0) - model->stressPath->at(i)(2, 2);
-	default:
-		return 0;
-	}
-}
-
-double Chart::getAxisY(int axisY, int i) {
-	switch (axisY) {
-	case 0:
+		return model->stressPath->at(i)(0, 2);
+	case 4:
+		return model->stressPath->at(i)(2, 2) - model->stressPath->at(i)(0, 0);
+	case 5:
+		return (model->stressPath->at(i)(0, 0) + model->stressPath->at(i)(1, 1) + model->stressPath->at(i)(2, 2)) / 3.0;
+	case 6:
 		return model->strainPath->at(i)(0, 0);
-	case 1:
+	case 7:
 		return model->strainPath->at(i)(1, 1);
-	case 2:
+	case 8:
 		return model->strainPath->at(i)(2, 2);
-	case 3:
-		return (model->strainPath->at(i)(0, 0) - model->strainPath->at(i)(2, 2)) * 2 / 3;
+	case 9:
+		return model->strainPath->at(i)(0, 2);
+	case 10:
+		return (model->strainPath->at(i)(2, 2) - model->strainPath->at(i)(0, 0)) * 2.0 / 3;
+	case 11:
+		return model->strainPath->at(i)(0, 0) + model->strainPath->at(i)(1, 1) + model->strainPath->at(i)(2, 2);
+	case 12:
+		return model->saveParameter.at(i).at(0);
 	default:
 		return 0;
 	}

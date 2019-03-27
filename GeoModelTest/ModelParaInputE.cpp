@@ -6,6 +6,10 @@ ModelParaInputE::ModelParaInputE(QWidget *parent) : QDialog(parent){
 	this->resize(240, 190);
 	this->setWindowTitle("设置线性模型参数");
 
+	Qt::WindowFlags flags = Qt::Dialog;
+	flags |= Qt::WindowCloseButtonHint;
+	setWindowFlags(flags);
+
 	labelE = new QLabel(this);
 	labelE->setText("弹性模量E");
 	labelE->move(20, 20);
