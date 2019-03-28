@@ -71,10 +71,12 @@ void MODEL::Simulate() {
 		saveParameter.push_back(tmpPara);
 	}
 	
+	double initPressure = tr(stress) / 3;
+
 	while (!isEndingPoint()) {
 		stressPath->push_back(stress);
 		strainPath->push_back(strain);
-		GetStrainIncrementForSpecifiedTestType();
+		GetStrainIncrementForSpecifiedTestType(initPressure);
 		Integrator(true);
 		strain = strain + strainIncrement;
 		stress = stress + stressIncrement;
@@ -83,7 +85,7 @@ void MODEL::Simulate() {
 	strainPath->push_back(strain);
 }
 
-void MODEL::GetStrainIncrementForSpecifiedTestType() {
+void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 	double stressTolerance = 0.3;
 
 	switch (testType) {
@@ -122,15 +124,16 @@ void MODEL::GetStrainIncrementForSpecifiedTestType() {
 		strainIncrement(2, 2) = stepLength;
 		do {
 			Integrator(false);
-			if (stressIncrement(0, 0) < 0) 
+			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
 				strainIncrement(0, 0) -= stepLength / 100;
 			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) < 0)
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) -= stepLength / 100;
 			else
 				strainIncrement(1, 1) += stepLength / 100;
-		} while (abs(stressIncrement(0, 0)) > 0 || abs(stressIncrement(1, 1)) > 0);
+		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance 
+			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
 
 	case 4:
@@ -140,15 +143,16 @@ void MODEL::GetStrainIncrementForSpecifiedTestType() {
 		strainIncrement(2, 2) = -stepLength;
 		do {
 			Integrator(false);
-			if (stressIncrement(0, 0) < 0)
+			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
 				strainIncrement(0, 0) -= stepLength / 100;
 			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) < 0)
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) -= stepLength / 100;
 			else
 				strainIncrement(1, 1) += stepLength / 100;
-		} while (abs(stressIncrement(0, 0)) > stressTolerance || abs(stressIncrement(1, 1)) > stressTolerance);
+		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
+			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
 
 	case 5:
@@ -161,15 +165,16 @@ void MODEL::GetStrainIncrementForSpecifiedTestType() {
 			strainIncrement(2, 2) = -stepLength;
 		do {
 			Integrator(false);
-			if (stressIncrement(0, 0) < 0)
+			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
 				strainIncrement(0, 0) -= stepLength / 100;
 			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) < 0)
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) -= stepLength / 100;
 			else
 				strainIncrement(1, 1) += stepLength / 100;
-		} while (abs(stressIncrement(0, 0)) > stressTolerance || abs(stressIncrement(1, 1)) > stressTolerance);
+		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
+			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
 
 	default:
@@ -337,6 +342,7 @@ void MODEL::IntegratorE(bool updateFlag) {
 void MODEL::IntegratorDMExplicit(bool updateFlag) {
 	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0, depsv;
 	MATRIX ds, n, alpha, z, alphaInit, dz, dAlpha, I(1, 1, 1);
+	MODEL::RK4Class rk41, rk42, rk43, rk44;
 	for (int i = 0; i < 9; i++)
 		alpha.matrix[i] = saveParameter.back().at(i + 1);
 	for (int i = 0; i < 9; i++)
@@ -357,7 +363,6 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 		stressIncrement = ds + depsv * K * I;
 	}
 	else {
-		MODEL::RK4Class rk41, rk42, rk43, rk44;
 		rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
 		rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
 		rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
@@ -527,7 +532,7 @@ MATRIX MODEL::getN(MATRIX r, MATRIX alpha) {
 	MATRIX n, I(-1/sqrt(6), -1 / sqrt(6), 2/sqrt(6));
 	n = (r - alpha) / sqrt(2.0 / 3) / internalParameter[8];
 	if (abs((n % n) - 1) > 1e-6) {
-		n = I * n(2, 2) / abs(n(2, 2));
+		n = I * (n(2, 2) + 1e-16) / abs(n(2, 2) + 1e-16);
 	}
 	return n;
 }

@@ -37,7 +37,7 @@ public:
 	void Simulate();
 
 private:
-	void GetStrainIncrementForSpecifiedTestType();
+	void GetStrainIncrementForSpecifiedTestType(double);
 	void Integrator(bool);
 	bool isEndingPoint();
 	bool isReversalPoint();
