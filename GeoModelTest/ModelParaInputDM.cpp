@@ -5,6 +5,7 @@
 
 ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 	ui.setupUi(this);
+	setFixedSize(this->width(), this->height());
 	input = new QLineEdit[15];
 	method = new QComboBox(this);
 

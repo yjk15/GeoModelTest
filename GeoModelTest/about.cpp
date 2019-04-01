@@ -5,6 +5,7 @@
 ABOUT::ABOUT(QWidget *parent) : QDialog(parent){
 	//初始化对话框的大小以及设置其名字
 	this->resize(280, 110);
+	setFixedSize(this->width(), this->height());
 	this->setWindowTitle("关于");
 
 	Qt::WindowFlags flags = Qt::Dialog;

@@ -5,6 +5,7 @@
 
 ModelParaInputCycliq::ModelParaInputCycliq(QWidget *parent) : QDialog(parent) {
 	ui.setupUi(this);
+	setFixedSize(this->width(), this->height());
 	this->setWindowTitle("设置Cycliq模型参数");
 	input = new QLineEdit[14];
 	//method = new QComboBox(this);

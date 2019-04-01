@@ -284,7 +284,7 @@ void MainWindow::openAbout() {
 }
 
 void MainWindow::loadParameter() {
-	filePath = QFileDialog::getOpenFileName(this, tr("载入参数"), "", tr("data(*.dat);;all(*.*)"));
+	filePath = QFileDialog::getOpenFileName(this, tr("载入参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QFile file(filePath);
 	QString para;
 	file.open(QIODevice::ReadOnly);
@@ -333,7 +333,7 @@ void MainWindow::loadParameter() {
 
 void MainWindow::saveParameter() {
 	if (filePath == "")
-		filePath = QFileDialog::getOpenFileName(this, tr("保存参数"), "", tr("data(*.dat);;all(*.*)"));
+		filePath = QFileDialog::getSaveFileName(this, tr("保存参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QString para;
 	para.append(QString::number(model->testType));
 	para.append("\n");
@@ -381,7 +381,7 @@ void MainWindow::saveParameter() {
 }
 
 void MainWindow::saveParameterInNewFile() {
-	filePath = QFileDialog::getOpenFileName(this, tr("另存为参数"), "", tr("data(*.dat);;all(*.*)"));
+	filePath = QFileDialog::getSaveFileName(this, tr("另存为参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QString para;
 	para.append(QString::number(model->testType));
 	para.append("\n");
@@ -429,7 +429,7 @@ void MainWindow::saveParameterInNewFile() {
 }
 
 void MainWindow::saveResult() {
-	resultFilePath = QFileDialog::getOpenFileName(this, tr("保存输出文件"), "", tr("data(*.dat);;all(*.*)"));
+	resultFilePath = QFileDialog::getSaveFileName(this, tr("保存输出文件"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QFile file(resultFilePath);
 	file.open(QIODevice::WriteOnly);
 	QString result;
@@ -551,7 +551,7 @@ void MainWindow::beginCalculate() {
 	finish = clock();
 	cost = (double)(finish - start) / CLOCKS_PER_SEC;
 	tmp = QString::number(cost);
-	out = tr("计算完成，共耗时") + tmp + "s";
+	out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
 	message->close();
 	delete message;
 	ui.statusBar->showMessage(out);

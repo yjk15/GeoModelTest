@@ -24,6 +24,8 @@ MODEL::MODEL() {
 
 	stressPath = new vector<MATRIX>;
 	strainPath = new vector<MATRIX>;
+
+	timer = 0;
 }
 
 MODEL::~MODEL() {
@@ -184,6 +186,9 @@ void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 }
 
 void MODEL::Integrator(bool updateFlag) {
+	clock_t start, finish;
+	start = clock();
+
 	switch (model) {
 	case 0:
 		IntegratorE(updateFlag);
@@ -204,6 +209,12 @@ void MODEL::Integrator(bool updateFlag) {
 		stressIncrement.clear();
 		break;
 	}
+
+	finish = clock();
+	if (updateFlag) {
+		timer += (double)(finish - start) / CLOCKS_PER_SEC;
+	}
+	
 }
 
 bool MODEL::isEndingPoint() {

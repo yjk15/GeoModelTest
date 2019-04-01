@@ -52,9 +52,9 @@ void Chart::setNewChart(){
 	widget = new QChartView(this);
 	widget->setGeometry(QRect(0, 0, 600, 400));
 	chart = new QChart();
-	series = new QSplineSeries();
-	axisX = new QValueAxis; //定义X轴
-	axisY = new QValueAxis;
+	series = new QSplineSeries(this);
+	axisX = new QValueAxis(this); //定义X轴
+	axisY = new QValueAxis(this);
 
 	for (int i = 0; i < model->stressPath->size(); i++)
 		series->append(getAxis(model->axisX, i), getAxis(model->axisY, i));

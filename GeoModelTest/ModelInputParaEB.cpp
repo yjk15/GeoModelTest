@@ -4,6 +4,7 @@
 
 ModelParaInputEB::ModelParaInputEB(QWidget *parent) : QDialog(parent) {
 	this->resize(240, 330);
+	setFixedSize(this->width(), this->height());
 	this->setWindowTitle("设置EB模型参数");
 
 	Qt::WindowFlags flags = Qt::Dialog;

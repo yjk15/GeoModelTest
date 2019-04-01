@@ -5,6 +5,7 @@
 EndAndReversalStateNoCycle::EndAndReversalStateNoCycle(QWidget *parent) : QDialog(parent) {
 	this->setWindowTitle("ÉèÖÃÄ©×´Ì¬");
 	this->resize(330, 120);
+	setFixedSize(this->width(), this->height());
 
 	Qt::WindowFlags flags = Qt::Dialog;
 	flags |= Qt::WindowCloseButtonHint;

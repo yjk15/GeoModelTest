@@ -5,6 +5,7 @@
 DisplayParameter::DisplayParameter(MODEL *m, QWidget *parent) : QDialog(parent) {
 	//初始化对话框的大小以及设置其名字
 	this->resize(600, 660);
+	setFixedSize(this->width(), this->height());
 	this->setWindowTitle("检查参数");
 
 	Qt::WindowFlags flags = Qt::Dialog;
