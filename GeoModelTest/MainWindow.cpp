@@ -60,6 +60,7 @@ void MainWindow::setMenu() {
 	saveOutput->setText("保存结果");
 	file->addAction(saveOutput);
 	connect(saveOutput, SIGNAL(triggered()), this, SLOT(saveResult()));
+	
 	ui.menuBar->addMenu(file);
 
 	QMenu *menu = new QMenu("帮助");
@@ -72,6 +73,12 @@ void MainWindow::setMenu() {
 	about->setText("关于");
 	menu->addAction(about);
 	connect(about, SIGNAL(triggered()), this, SLOT(openAbout()));
+
+	QAction *test = new QAction(this);
+	test->setText("测试");
+	menu->addAction(test);
+	connect(test, SIGNAL(triggered()), this, SLOT(test()));
+	
 	ui.menuBar->addMenu(menu);
 }
 
@@ -285,6 +292,11 @@ void MainWindow::openAbout() {
 
 void MainWindow::loadParameter() {
 	filePath = QFileDialog::getOpenFileName(this, tr("载入参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+	loadPara();
+	ui.statusBar->showMessage(tr("参数已加载"));
+}
+
+void MainWindow::loadPara() {
 	QFile file(filePath);
 	QString para;
 	file.open(QIODevice::ReadOnly);
@@ -328,7 +340,6 @@ void MainWindow::loadParameter() {
 	para = file.readLine();
 	*model->figureTitle = para;
 	file.close();
-	ui.statusBar->showMessage(tr("参数已加载"));
 }
 
 void MainWindow::saveParameter() {
@@ -430,6 +441,11 @@ void MainWindow::saveParameterInNewFile() {
 
 void MainWindow::saveResult() {
 	resultFilePath = QFileDialog::getSaveFileName(this, tr("保存输出文件"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+	saveRes();
+	ui.statusBar->showMessage(tr("计算结果已存储"));
+}
+
+void MainWindow::saveRes() {
 	QFile file(resultFilePath);
 	file.open(QIODevice::WriteOnly);
 	QString result;
@@ -446,7 +462,6 @@ void MainWindow::saveResult() {
 	}
 	file.write(result.toUtf8());
 	file.close();
-	ui.statusBar->showMessage(tr("计算结果已存储"));
 }
 
 void MainWindow::setConsModel(int model) {
@@ -583,4 +598,22 @@ void MainWindow::reset() {
 	figure = new Chart(model, this);
 	displayParameter = new DisplayParameter(model, this);
 	ui.statusBar->showMessage(tr("已重置所有参数"));
+}
+
+void MainWindow::test() {
+	QMessageBox *message = new QMessageBox(QMessageBox::Information, "测试中", tr("正在计算……"), QMessageBox::NoButton, this);
+	message->show();
+	filePath = tr("./TestFile/test");
+	resultFilePath = tr("./Result/testResult");
+	for (int i = 0; i < 150; i++) {
+		filePath += QString::number(i) + tr(".dat");
+		resultFilePath += QString::number(i) + tr(".txt");
+		loadPara();
+		model->Simulate();
+		saveRes();
+		reset();
+		filePath = tr("./TestFile/test");
+		resultFilePath = tr("./Result/testResult");
+	}
+	message->close();
 }

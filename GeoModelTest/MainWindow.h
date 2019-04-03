@@ -46,6 +46,8 @@ public:
 
 private:
 	Ui::MainWindowClass ui;
+	void loadPara();
+	void saveRes();
 
 private slots:
 	void setInitState();
@@ -57,6 +59,7 @@ private slots:
 	void openManual();
 	void openAbout();
 	void loadParameter();
+	
 	void saveParameter();
 	void saveParameterInNewFile();
 	void saveResult();
@@ -77,5 +80,7 @@ private slots:
 	void setAxisY(int y);
 	void drawing();
 	void reset();
+
+	void test();
 
 };

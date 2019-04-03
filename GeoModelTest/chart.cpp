@@ -18,8 +18,8 @@ Chart::Chart(MODEL *m, QWidget *parent)
 	widget->setGeometry(QRect(0, 0, 600, 400));
 
 	series = new QSplineSeries();
-	for (int i = 0; i < 100; i++)
-		series->append(i, sin(0.5 * i));
+	for (int i = 0; i < model->stressPath->size(); i++)
+		series->append(getAxis(model->axisX, i), getAxis(model->axisY, i));
 	chart = new QChart();
 	chart->addSeries(series);
 	chart->legend()->hide();
@@ -32,8 +32,9 @@ Chart::Chart(MODEL *m, QWidget *parent)
 
 	axisY = new QValueAxis;
 	axisY->setTitleText("Y Axis");
-	axisY->setLabelFormat("%.2f");
+	axisY->setLabelFormat("%g");
 	axisY->setGridLineVisible(true);
+	axisY->setMinorTickCount(4); //设置小刻度线的数目
 
 	chart->setAxisX(axisX, series);
 	chart->setAxisY(axisY, series);

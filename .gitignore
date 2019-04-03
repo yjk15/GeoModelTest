@@ -264,3 +264,5 @@ __pycache__/
 /GeoModelTest/teh1.txt
 *.txt
 /GeoModelTest/sample.png
+/GeoModelTest/TestFile
+*.py
