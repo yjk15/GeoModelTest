@@ -77,4 +77,5 @@ private:
 	void IntegratorEB(bool);
 
 	void IntegratorCycliq(bool);
+	void IntegratorCycliqExplicit(bool updateFlag);
 };

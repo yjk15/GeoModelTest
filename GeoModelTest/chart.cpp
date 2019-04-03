@@ -63,12 +63,12 @@ void Chart::setNewChart(){
 	chart->addSeries(series);
 	chart->legend()->hide();
 	axisX->setLabelFormat("%g"); //设置刻度的格式
-	axisX->setTitleText(getAxisXTitle(model->axisX)); //设置X轴的标题
+	axisX->setTitleText(getAxisTitle(model->axisX)); //设置X轴的标题
 	axisX->setGridLineVisible(true); //设置是否显示网格线
 	axisX->setMinorTickCount(4); //设置小刻度线的数目
 	// axisX->setLabelsVisible(false); //设置刻度是否显示
 
-	axisY->setTitleText(getAxisYTitle(model->axisY));
+	axisY->setTitleText(getAxisTitle(model->axisY));
 	axisY->setLabelFormat("%g");
 	axisY->setGridLineVisible(true);
 	axisY->setMinorTickCount(4);
@@ -113,7 +113,7 @@ double Chart::getAxis(int axis, int i) {
 	}
 }
 
-QString Chart::getAxisXTitle(int axisX) {
+QString Chart::getAxisTitle(int axisX) {
 	switch (axisX) {
 	case 0:
 		return "stress(0, 0)";
@@ -122,22 +122,25 @@ QString Chart::getAxisXTitle(int axisX) {
 	case 2:
 		return "stress(2, 2)";
 	case 3:
+		return "stress(1, 3)";
+	case 4:
 		return "q";
-	default:
-		return "";
-	}
-}
-
-QString Chart::getAxisYTitle(int axisY) {
-	switch (axisY) {
-	case 0:
+	case 5:
+		return "p";
+	case 6:
 		return "strain(0, 0)";
-	case 1:
+	case 7:
 		return "strain(1, 1)";
-	case 2:
+	case 8:
 		return "strain(2, 2)";
-	case 3:
-		return "epsilonq";
+	case 9:
+		return "strain(1, 3)";
+	case 10:
+		return "εq";
+	case 11:
+		return "εp";
+	case 12:
+		return "e";
 	default:
 		return "";
 	}

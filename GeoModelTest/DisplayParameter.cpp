@@ -49,6 +49,9 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	case 5:
 		label[1].setText("排水三轴循环试验");
 		break;
+	case 6:
+		label[1].setText("不排水循环扭剪试验");
+		break;
 	default:
 		break;
 	}
@@ -146,7 +149,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	label[25].resize(80, 30);
 	label[25].move(230, 220);
 
-	if (model->testType == 2 || model->testType == 5) {
+	if (model->testType == 2 || model->testType == 5 || model->testType == 6) {
 		label[26].setParent(this);
 		label[26].setText("反转次数");
 		label[26].move(20, 270);
@@ -174,6 +177,9 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		break;
 	case 2:
 		label[29].setText("Dafalias and Manzari模型");
+		break;
+	case 3:
+		label[29].setText("Cycliq模型");
 		break;
 	default:
 		break;
@@ -593,6 +599,19 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[57].setText(tmp);
 		label[57].move(310, 570);
 		label[57].resize(90, 30);
+
+		label[60].setParent(this);
+		label[60].setText("积分方法");
+		label[60].move(20, 620);
+		label[60].resize(90, 30);
+
+		label[61].setParent(this);
+		if (model->internalParameter[0] == 0)
+			label[61].setText("隐式积分");
+		if (model->internalParameter[0] == 1)
+			label[61].setText("显式积分");
+		label[61].move(80, 620);
+		label[61].resize(90, 30);
 		break;
 	default:
 		break;

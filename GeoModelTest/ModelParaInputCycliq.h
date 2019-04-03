@@ -17,7 +17,7 @@ public:
 
 
 	QLineEdit *input;
-	//QComboBox *method;
+	QComboBox *method;
 	QPushButton *yes, *cancel;
 	double para[15]; //解法（暂时只有一种）, G0, kappa, h, M, dre1, dre2, dir, alpha/eta, gammadr, np, nd, lambdaC, e0, xi
 	//注：在论文中的alpha即为此程序中的eta

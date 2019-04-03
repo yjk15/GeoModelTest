@@ -311,7 +311,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>计算方法</string>
+    <string>积分方法</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton">

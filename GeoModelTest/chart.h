@@ -29,6 +29,5 @@ private:
 
 private:
 	double getAxis(int axis, int i);
-	QString getAxisXTitle(int axisX);
-	QString getAxisYTitle(int axisY);
+	QString getAxisTitle(int axisX);
 };

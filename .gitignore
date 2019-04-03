@@ -266,3 +266,4 @@ __pycache__/
 /GeoModelTest/sample.png
 /GeoModelTest/TestFile
 *.py
+*.dat

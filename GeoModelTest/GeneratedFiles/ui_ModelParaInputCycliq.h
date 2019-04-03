@@ -33,12 +33,13 @@ public:
     QLabel *label_13;
     QLabel *label_15;
     QLabel *label;
+    QLabel *label_14;
 
     void setupUi(QDialog *DialogCycliq)
     {
         if (DialogCycliq->objectName().isEmpty())
             DialogCycliq->setObjectName(QString::fromUtf8("DialogCycliq"));
-        DialogCycliq->resize(256, 486);
+        DialogCycliq->resize(256, 520);
         label_2 = new QLabel(DialogCycliq);
         label_2->setObjectName(QString::fromUtf8("label_2"));
         label_2->setGeometry(QRect(30, 20, 71, 21));
@@ -97,6 +98,10 @@ public:
         label->setObjectName(QString::fromUtf8("label"));
         label->setGeometry(QRect(30, 410, 71, 21));
         label->setFont(font);
+        label_14 = new QLabel(DialogCycliq);
+        label_14->setObjectName(QString::fromUtf8("label_14"));
+        label_14->setGeometry(QRect(30, 440, 71, 21));
+        label_14->setFont(font);
 
         retranslateUi(DialogCycliq);
 
@@ -120,6 +125,7 @@ public:
         label_13->setText(QCoreApplication::translate("DialogCycliq", "\316\273_c", nullptr));
         label_15->setText(QCoreApplication::translate("DialogCycliq", "e_0", nullptr));
         label->setText(QCoreApplication::translate("DialogCycliq", "\316\276", nullptr));
+        label_14->setText(QCoreApplication::translate("DialogCycliq", "\347\247\257\345\210\206\346\226\271\346\263\225", nullptr));
     } // retranslateUi
 
 };

@@ -157,7 +157,7 @@ public:
         label_19->setText(QCoreApplication::translate("Dialog", "\347\273\204\346\236\204-\345\211\252\350\203\200\345\274\240\351\207\217", nullptr));
         label_20->setText(QCoreApplication::translate("Dialog", "z_{max}", nullptr));
         label_21->setText(QCoreApplication::translate("Dialog", "c_z", nullptr));
-        label_22->setText(QCoreApplication::translate("Dialog", "\350\256\241\347\256\227\346\226\271\346\263\225", nullptr));
+        label_22->setText(QCoreApplication::translate("Dialog", "\347\247\257\345\210\206\346\226\271\346\263\225", nullptr));
         pushButton->setText(QCoreApplication::translate("Dialog", "PushButton", nullptr));
         pushButton_2->setText(QCoreApplication::translate("Dialog", "PushButton", nullptr));
     } // retranslateUi

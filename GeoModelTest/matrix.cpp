@@ -103,7 +103,7 @@ double operator % (MATRIX M, MATRIX N) {
 	double a = 0;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
-			a += M(i, j) * N(j, i);
+			a += M(i, j) * N(i, j);
 
 	return a;
 }
