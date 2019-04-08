@@ -81,6 +81,8 @@ void Chart::setNewChart(){
 }
 
 double Chart::getAxis(int axis, int i) {
+	MATRIX I(1,1,1);
+	double p;
 	switch (axis) {
 	case 0:
 		return model->stressPath->at(i)(0, 0);

@@ -78,4 +78,10 @@ private:
 
 	void IntegratorCycliq(bool);
 	void IntegratorCycliqExplicit(bool updateFlag);
+	struct RK4CycliqClass {
+		double dein, depsvir, depsvre, dgammamono, depsvc, deta; 
+		MATRIX dAlpha, dSigma;
+	};
+	RK4CycliqClass RK4Cycliq(MATRIX stress, MATRIX strain, double ein, double epsvir,double epsvre, double gammamono, double epsvc, double eta, MATRIX alpha);
+	double getBeta(MATRIX alpha_ns, MATRIX r, MATRIX r1, double Mfc, double Mfo, double np, double psi, double etamplus1, double sin3theta);
 };

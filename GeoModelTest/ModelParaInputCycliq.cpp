@@ -21,8 +21,8 @@ ModelParaInputCycliq::ModelParaInputCycliq(QWidget *parent) : QDialog(parent) {
 	}
 	method->resize(91, 21);
 	method->move(120, 440);
-	method->addItem("隐式积分");
-	method->addItem("显式积分");
+	method->addItem("CPM");
+	method->addItem("RK4");
 
 	yes = new QPushButton(this);
 	cancel = new QPushButton(this);
