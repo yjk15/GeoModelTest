@@ -12,7 +12,7 @@ public:
 	double ee; //模拟开始时的孔隙比
 	int endAndReversalType; //设置计算结束或者反转时的状态，0-->p; 1-->q; 2-->体应变
 	double endAndReversalPoint;
-	int loop, loopCounter, stepCounter;
+	int reverse, reverseCounter, stepCounter;
 	bool direction;
 
 	QString *figureTitle;
@@ -80,7 +80,7 @@ private:
 	void IntegratorCycliqExplicit(bool updateFlag);
 	struct RK4CycliqClass {
 		double dein, depsvir, depsvre, dgammamono, depsvc, deta; 
-		MATRIX dAlpha, dSigma;
+		MATRIX dSigma;
 	};
 	RK4CycliqClass RK4Cycliq(MATRIX stress, MATRIX strain, double ein, double epsvir,double epsvre, double gammamono, double epsvc, double eta, MATRIX alpha);
 	double getBeta(MATRIX alpha_ns, MATRIX r, MATRIX r1, double Mfc, double Mfo, double np, double psi, double etamplus1, double sin3theta);

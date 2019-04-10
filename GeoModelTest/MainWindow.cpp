@@ -268,10 +268,10 @@ void MainWindow::setEndState() {
 	}
 }
 
-void MainWindow::receiveEndAndReversalState(int type, double point, int loop) {
+void MainWindow::receiveEndAndReversalState(int type, double point, int reverse) {
 	model->endAndReversalType = type;
 	model->endAndReversalPoint = point;
-	model->loop = loop;
+	model->reverse = reverse;
 }
 
 void MainWindow::setTestType(int type) {
@@ -312,9 +312,9 @@ void MainWindow::loadPara() {
 	para = file.readLine();
 	model->endAndReversalPoint = para.toDouble();
 	para = file.readLine();
-	model->loop = para.toInt();
+	model->reverse = para.toInt();
 	para = file.readLine();
-	model->loopCounter = para.toInt();
+	model->reverseCounter = para.toInt();
 	para = file.readLine();
 	model->stepCounter = para.toInt();
 	para = file.readLine();
@@ -357,7 +357,7 @@ void MainWindow::saveParameter() {
 	para.append("\n");
 	para.append(QString::number(model->endAndReversalPoint));
 	para.append("\n");
-	para.append(QString::number(model->loop));
+	para.append(QString::number(model->reverse));
 	para.append("\n");
 	para.append(QString::number(0));
 	para.append("\n");
@@ -405,7 +405,7 @@ void MainWindow::saveParameterInNewFile() {
 	para.append("\n");
 	para.append(QString::number(model->endAndReversalPoint));
 	para.append("\n");
-	para.append(QString::number(model->loop));
+	para.append(QString::number(model->reverse));
 	para.append("\n");
 	para.append(QString::number(0));
 	para.append("\n");

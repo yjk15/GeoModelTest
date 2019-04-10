@@ -156,7 +156,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[26].resize(60, 30);
 
 		label[27].setParent(this);
-		tmp = QString::number(model->loop);
+		tmp = QString::number(model->reverse);
 		label[27].setText(tmp);
 		label[27].resize(80, 30);
 		label[27].move(120, 270);
