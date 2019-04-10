@@ -1220,7 +1220,7 @@ void MODEL::IntegratorCycliqExplicit(bool updateFlag) {
 		epsvre_ns = epsvre + (rk1.depsvre + rk2.depsvre * 2 + rk3.depsvre * 2 + rk4.depsvre) / 6;
 		epsvc_ns = epsvc + (rk1.depsvc + rk2.depsvc * 2 + rk3.depsvc * 2 + rk4.depsvc) / 6;
 		gammamonos = gammamono + (rk1.dgammamono + rk2.dgammamono * 2 + rk3.dgammamono * 2 + rk4.dgammamono) / 6;
-		etamplus1 = etam + (rk1.deta + rk2.deta * 2 + rk3.deta * 2 + rk4.deta) / 4;
+		etamplus1 = etam + (rk1.deta + rk2.deta * 2 + rk3.deta * 2 + rk4.deta) / 6;
 		stressIncrement = (rk1.dSigma + rk2.dSigma * 2 + rk3.dSigma * 2 + rk4.dSigma) / 6;
 	}
 
