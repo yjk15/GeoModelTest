@@ -568,6 +568,9 @@ void MainWindow::beginCalculate() {
 	cost = (double)(finish - start) / CLOCKS_PER_SEC;
 	tmp = QString::number(cost);
 	out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
+	//out += "beta耗时" + QString::number(model->betaTimer) + "s，pre耗时" + QString::number(model->preTimer) + "s";
+	//out += "子步" + QString::number(double(model->subSteps / model->endAndReversalPoint));
+	out += "循环数" + QString::number(double(model->CPM / model->endAndReversalPoint));
 	message->close();
 	delete message;
 	ui.statusBar->showMessage(out);
@@ -604,17 +607,17 @@ void MainWindow::reset() {
 void MainWindow::test() {
 	QMessageBox *message = new QMessageBox(QMessageBox::Information, "测试中", tr("正在计算……"), QMessageBox::NoButton, this);
 	message->show();
-	filePath = tr("./TestFile/test");
-	resultFilePath = tr("./Result/testResult");
-	for (int i = 0; i < 150; i++) {
+	filePath = tr("./TestFile/testCycliq");
+	resultFilePath = tr("./Result/testResultCycliq");
+	for (int i = 120; i < 130; i++) {
 		filePath += QString::number(i) + tr(".dat");
 		resultFilePath += QString::number(i) + tr(".txt");
 		loadPara();
 		model->Simulate();
 		saveRes();
 		reset();
-		filePath = tr("./TestFile/test");
-		resultFilePath = tr("./Result/testResult");
+		filePath = tr("./TestFile/testCycliq");
+		resultFilePath = tr("./Result/testResultCycliq");
 	}
 	message->close();
 }

@@ -26,6 +26,11 @@ MODEL::MODEL() {
 	strainPath = new vector<MATRIX>;
 
 	timer = 0;
+	betaTimer = 0;
+	CPMTimer = 0;
+	preTimer = 0;
+	subSteps = 0;
+	CPM = 0;
 }
 
 MODEL::~MODEL() {
@@ -127,13 +132,13 @@ void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 		do {
 			Integrator(false);
 			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
-				strainIncrement(0, 0) -= stepLength / 100;
-			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
-				strainIncrement(1, 1) -= stepLength / 100;
 			else
+				strainIncrement(0, 0) -= stepLength / 100;
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) += stepLength / 100;
+			else
+				strainIncrement(1, 1) -= stepLength / 100;
 		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
 			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
@@ -146,13 +151,13 @@ void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 		do {
 			Integrator(false);
 			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
-				strainIncrement(0, 0) -= stepLength / 100;
-			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
-				strainIncrement(1, 1) -= stepLength / 100;
 			else
+				strainIncrement(0, 0) -= stepLength / 100;
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) += stepLength / 100;
+			else
+				strainIncrement(1, 1) -= stepLength / 100;
 		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
 			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
@@ -168,13 +173,13 @@ void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 		do {
 			Integrator(false);
 			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
-				strainIncrement(0, 0) -= stepLength / 100;
-			else
 				strainIncrement(0, 0) += stepLength / 100;
-			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
-				strainIncrement(1, 1) -= stepLength / 100;
 			else
+				strainIncrement(0, 0) -= stepLength / 100;
+			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
 				strainIncrement(1, 1) += stepLength / 100;
+			else
+				strainIncrement(1, 1) -= stepLength / 100;
 		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
 			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
 		break;
@@ -263,7 +268,7 @@ bool MODEL::isEndingPoint() {
 			return false;
 
 		case 3:
-			epsilonq = strain(2, 2) - strain(0, 0);
+			epsilonq = (strain(2, 2) - strain(0, 0)) * 2.0 / 3;
 			if (abs(epsilonq) >= abs(endAndReversalPoint))
 				return true;
 			return false;
@@ -397,7 +402,7 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 
 	G = getG(p, ee);
 	K = getK(G);
-	ds = 2 * G * (strainIncrement - depsv * I);
+	ds = 2 * G * (strainIncrement - depsv / 3 * I);
 	f = getF(stress - p * I + ds, alpha, p);
 
 	if (f < 0) {
@@ -481,7 +486,7 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 
 	G = getG(p, ee);
 	K = getK(G);
-	ds = 2 * G * (strainIncrement - depsv * I);
+	ds = 2 * G * (strainIncrement - depsv / 3 * I);
 	f = getF(s + ds, alpha, p);
 	MATRIX alphaThetaD, alphaThetaB, RAp, tmp;
 	double cos3Theta, Ad, h, Kp, dL, dee;
@@ -493,6 +498,10 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 	}
 	else {
 		for (int i = 0; i < 100; i++) {
+			if (updateFlag) {
+				CPM += 1;
+			}
+
 			G = getG(p + dp, ee);
 			K = getK(G);
 			r = (s + ds) / (p + dp);
@@ -520,6 +529,7 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 			ds = (strainIncrement - depsv / 3 * I - relu(L) * RAp) * 2 * G;
 			dAlpha = getdAlpha(L, h, alphaThetaB, alpha + dAlpha);
 			dz = getdz(relu(L) * D, n, z + dz);
+			
 		}
 		alpha = alpha + dAlpha;
 		z = z + dz;
@@ -702,6 +712,9 @@ void MODEL::IntegratorEB(bool updateFlag) {
 }
 
 void MODEL::IntegratorCycliq(bool updateFlag) {
+	clock_t start, finish, preStart, preFinish;
+	preStart = clock();
+
 	double pmin = 0.5;
 	//Cycliq Model中最小的p值
 	double tolerance = 1e-4;
@@ -814,6 +827,11 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 		sub = sub2;
 	if (sub > 100)
 		sub = 100;
+
+	preFinish = clock();
+	if (updateFlag) {
+		preTimer += (double)(preFinish - preStart) / CLOCKS_PER_SEC;
+	}
 	for (isub = 0; isub < sub; isub++)
 	{
 
@@ -938,6 +956,9 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 
 				int wr = 1;
 				iconv = 0.0;
+
+				start = clock(); //compute the timer in the cycle
+				
 				do
 				{
 					if (iconv == 0.0) {
@@ -976,6 +997,10 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 					epsvre_nplus1 = lambda * Dre_n + epsvre_ns;
 
 				} while (abs(phi) > tolerance);
+
+				finish = clock();
+				CPMTimer += (double)(finish - start) / CLOCKS_PER_SEC;
+				CPM += wr;
 				//cout << H << "\t" << G << "\t" << K << "\t" << D << "\t" << N << endl;
 				gammamonos = gammamonos + lambda;
 			}
@@ -1018,6 +1043,8 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 
 	stressIncrement = stress_pass - stress; // from positive to negative
 
+	subSteps += sub;
+
 	ein -= depsv * (1 + en);
 	vector<double> tmpPara;
 	if (updateFlag) {
@@ -1035,6 +1062,9 @@ void MODEL::IntegratorCycliq(bool updateFlag) {
 }
 
 void MODEL::IntegratorCycliqExplicit(bool updateFlag) {
+	clock_t preStart, preFinish;
+	preStart = clock();
+
 	double pmin = 0.5;
 	//Cycliq Model中最小的p值
 	double tolerance = 1e-4;
@@ -1142,6 +1172,11 @@ void MODEL::IntegratorCycliqExplicit(bool updateFlag) {
 	gammamonos = gammamono;
 	double eta_n;
 
+	preFinish = clock();
+	if (updateFlag) {
+		preTimer += (double)(preFinish - preStart) / CLOCKS_PER_SEC;
+	}
+
 	// --------------(I)Initialize-------------------------------------
 	alpha_nplus1 = alpha_ns;
 	epsvir_nplus1 = epsvir_ns;
@@ -1240,6 +1275,10 @@ void MODEL::IntegratorCycliqExplicit(bool updateFlag) {
 }
 
 MODEL::RK4CycliqClass MODEL::RK4Cycliq(MATRIX stress, MATRIX strain, double ein, double epsvir, double epsvre, double gammamono, double epsvc, double etam, MATRIX alpha) {
+	clock_t preStart, preFinish;
+	preStart = clock();
+	
+	
 	double pmin = 0.5;
 	//Cycliq Model中最小的p值
 	double tolerance = 1e-4;
@@ -1344,6 +1383,8 @@ MODEL::RK4CycliqClass MODEL::RK4Cycliq(MATRIX stress, MATRIX strain, double ein,
 		sub = sub2;
 	if (sub > 100)
 		sub = 100;
+	preFinish = clock();
+	preTimer += (double)(preFinish - preStart) / CLOCKS_PER_SEC;
 	for (isub = 0; isub < sub; isub++)
 	{
 
@@ -1487,6 +1528,8 @@ MODEL::RK4CycliqClass MODEL::RK4Cycliq(MATRIX stress, MATRIX strain, double ein,
 		stress_pass(i, i) += (p_n);
 	}
 
+	subSteps += sub;
+
 	RK4CycliqClass rk;
 	rk.dSigma = stress_pass - stress;
 	rk.dein = -depsv * (1 + en);
@@ -1499,6 +1542,9 @@ MODEL::RK4CycliqClass MODEL::RK4Cycliq(MATRIX stress, MATRIX strain, double ein,
 }
 
 double MODEL::getBeta(MATRIX alpha_ns, MATRIX r, MATRIX r1, double Mfc, double Mfo, double np, double psi, double etamplus1, double sin3theta) {
+	clock_t start, finish;
+	start = clock();
+
 	double beta, beta0, beta1, tolerance = 1e-4, gtheta, Fb0, Fb1, Fb, intm;
 	MATRIX rbar0, rbar1, normal, rbar, pass;
 	beta0 = 0.0;
@@ -1640,5 +1686,8 @@ double MODEL::getBeta(MATRIX alpha_ns, MATRIX r, MATRIX r1, double Mfc, double M
 		}
 
 	}
+	
+	finish = clock();
+	betaTimer += (double)(finish - start) / CLOCKS_PER_SEC;
 	return beta;
 }

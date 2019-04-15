@@ -29,7 +29,8 @@ public:
 	//Cycliq模型时，0存孔隙比e，1存epsvir，2存epsvre，3存gammamono，4存epsvc，5存etam，6-14存alpha
 	//注：Cycliq模型中的alpha即alphaInit
 
-	double timer;
+	double timer, betaTimer, CPMTimer, preTimer;
+	int subSteps, CPM;
 
 public:
 	MODEL();
