@@ -483,6 +483,7 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 	double ee = saveParameter.back().at(0);
 	depsv = tr(strainIncrement);
 	MATRIX s = stress - p * I;
+	MATRIX de = strainIncrement - depsv / 3 * I;
 
 	G = getG(p, ee);
 	K = getK(G);
@@ -492,7 +493,7 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 	double cos3Theta, Ad, h, Kp, dL, dee;
 	dee = -depsv * (1 + ee);
 
-	if (f <= 0) {
+	if (f < 0) {
 		alphaInit = alpha;
 		stressIncrement = ds + depsv * K * I;
 	}
@@ -518,14 +519,14 @@ void MODEL::IntegratorDMImplicit(bool updateFlag) {
 			RAp = getRAp(B, C, n);
 			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
 			f = getF(s + ds, alpha + dAlpha, p + dp);
-			if (abs(f) < stepLength / 10)
+			if (f < stepLength / 10)
 				break;
 
 			tmp = -2 * G * RAp + D * K * alpha - 2.0 / 3 * p * h * (alphaThetaB - alpha);
 			dL = f / ((tmp % (s + ds - (p + dp) * (alpha + dAlpha))) / sqrt((s + ds - (p + dp) * (alpha + dAlpha)) % (s + ds - (p + dp) * (alpha + dAlpha))) + sqrt(2.0 / 3) * D * K * internalParameter[8]);
 
 			L = L - dL;
-			dp = K * (-relu(L) * D);
+			dp = K * (depsv - relu(L) * D);
 			ds = (strainIncrement - depsv / 3 * I - relu(L) * RAp) * 2 * G;
 			dAlpha = getdAlpha(L, h, alphaThetaB, alpha + dAlpha);
 			dz = getdz(relu(L) * D, n, z + dz);
@@ -583,6 +584,9 @@ MATRIX MODEL::getN(MATRIX r, MATRIX alpha) {
 	n = (r - alpha) / sqrt(2.0 / 3) / internalParameter[8];
 	if (abs((n % n) - 1) > 1e-1 ) {
 		n = strainIncrement / sqrt(strainIncrement % strainIncrement);
+		if (abs(tr(n)) > 1e-1) {
+			n = N;
+		}
 	}
 	return n;
 }
