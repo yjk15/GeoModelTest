@@ -78,7 +78,7 @@ void MODEL::Simulate() {
 		saveParameter.push_back(tmpPara);
 	}
 
-	double initPressure = tr(stress) / 3;
+	double initPressure = stress(0,0);
 
 	while (!isEndingPoint()) {
 		stressPath->push_back(stress);
@@ -164,27 +164,6 @@ void MODEL::GetStrainIncrementForSpecifiedTestType(double initPressure) {
 
 	case 5:
 		strainIncrement.clear();
-		strainIncrement(0, 0) = 0;
-		strainIncrement(1, 1) = 0;
-		if (direction)
-			strainIncrement(2, 2) = stepLength;
-		else
-			strainIncrement(2, 2) = -stepLength;
-		do {
-			Integrator(false);
-			if (stressIncrement(0, 0) + stress(0, 0) < initPressure)
-				strainIncrement(0, 0) += stepLength / 100;
-			else
-				strainIncrement(0, 0) -= stepLength / 100;
-			if (stressIncrement(1, 1) + stress(1, 1) < initPressure)
-				strainIncrement(1, 1) += stepLength / 100;
-			else
-				strainIncrement(1, 1) -= stepLength / 100;
-		} while (abs(stressIncrement(0, 0) + stress(0, 0) - initPressure) > stressTolerance
-			|| abs(stressIncrement(1, 1) + stress(1, 1) - initPressure) > stressTolerance);
-		break;
-	case 6:
-		strainIncrement.clear();
 		if (direction) {
 			strainIncrement(2, 0) = stepLength;
 			strainIncrement(0, 2) = stepLength;
@@ -237,7 +216,7 @@ void MODEL::Integrator(bool updateFlag) {
 
 bool MODEL::isEndingPoint() {
 	double p, q, epsilonv, epsilonq;
-	if (testType == 2 || testType == 5 || testType == 6) {
+	if (testType == 2 || testType == 5) {
 		isReversalPoint();
 		if (reverseCounter >= reverse)
 			return true;
@@ -255,7 +234,7 @@ bool MODEL::isEndingPoint() {
 
 		case 1:
 			q = stress(0, 0) - stress(2, 2);
-			if (abs(q) >= abs(endAndReversalPoint)) {
+			if (abs(abs(q) - abs(endAndReversalPoint)) < 0.3) {
 				return true;
 			}
 			else
@@ -269,7 +248,7 @@ bool MODEL::isEndingPoint() {
 
 		case 3:
 			epsilonq = (strain(2, 2) - strain(0, 0)) * 2.0 / 3;
-			if (abs(epsilonq) >= abs(endAndReversalPoint))
+			if (abs(abs(epsilonq) - abs(endAndReversalPoint)) < 1e-6)
 				return true;
 			return false;
 
@@ -286,16 +265,16 @@ bool MODEL::isEndingPoint() {
 
 bool MODEL::isReversalPoint() {
 	double q, epsq;
-	if (testType != 2 && testType != 5 && testType != 6)
+	if (testType != 2 && testType != 5)
 		return false;
 	switch (endAndReversalType) {
 	case 0:
 		return false;
 
 	case 1:
-		if (testType == 2 || testType == 5)
+		if (testType == 2)
 			q = -stress(0, 0) + stress(2, 2);
-		else if (testType == 6)
+		else if (testType == 5)
 			q = stress(2, 0);
 		if (q >= abs(endAndReversalPoint)) {
 			if (direction != false)
@@ -316,7 +295,7 @@ bool MODEL::isReversalPoint() {
 		return false;
 
 	case 3:
-		if (testType < 6) {
+		if (testType < 5) {
 			epsq = 2.0 / 3 * (strain(2, 2) - strain(0, 0));
 			if (epsq > abs(endAndReversalPoint)) {
 				if (direction != false)
@@ -332,7 +311,7 @@ bool MODEL::isReversalPoint() {
 			}
 
 		}
-		else if (testType == 6) {
+		else if (testType == 5) {
 			epsq = strain(2, 0);
 			if (epsq > abs(endAndReversalPoint)) {
 				if (direction != false)

@@ -47,9 +47,6 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[1].setText("排水三轴挤长试验");
 		break;
 	case 5:
-		label[1].setText("排水三轴循环试验");
-		break;
-	case 6:
 		label[1].setText("不排水循环扭剪试验");
 		break;
 	default:

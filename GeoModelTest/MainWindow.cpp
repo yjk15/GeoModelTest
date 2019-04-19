@@ -106,7 +106,6 @@ void MainWindow::setType() {
 	testType->addItem(QWidget::tr("不排水三轴循环试验"));
 	testType->addItem(QWidget::tr("排水三轴压缩试验"));
 	testType->addItem(QWidget::tr("排水三轴挤长试验"));
-	testType->addItem(QWidget::tr("排水三轴循环试验"));
 	testType->addItem(QWidget::tr("不排水循环扭剪试验"));
 	connect(testType, SIGNAL(currentIndexChanged(int)), this, SLOT(setTestType(int)));
 }
@@ -258,7 +257,7 @@ void MainWindow::receiveInitState(MATRIX stress, MATRIX strain, double ee) {
 
 void MainWindow::setEndState() {
 	ui.statusBar->showMessage(tr("设置终止/反转状态"));
-	if (model->testType == 2 || model->testType == 5 || model->testType == 6) {
+	if (model->testType == 2 || model->testType == 5) {
 		connect(endAndReversalState, SIGNAL(sendEndAndReversalState(int, double, int)), this, SLOT(receiveEndAndReversalState(int, double, int)));
 		endAndReversalState->show();
 	}
