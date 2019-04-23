@@ -53,6 +53,8 @@ private:
 	};
 	RK4Class RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit);
 	void IntegratorDMImplicit(bool);
+	void IntegratorDMCPPM(bool);
+	void Guass(double a[27][27], double b[27], double x[27]);
 	double relu(double x);
 	double getG(double p, double e);
 	double getK(double G);

@@ -22,6 +22,7 @@ ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 	method->move(160, 470);
 	method->addItem("CPM");
 	method->addItem("RK4");
+	method->addItem("CPPM");
 
 	yes = new QPushButton(this);
 	cancel = new QPushButton(this);
