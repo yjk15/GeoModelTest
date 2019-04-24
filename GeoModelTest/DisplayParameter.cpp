@@ -437,8 +437,10 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[61].setParent(this);
 		if (model->internalParameter[0] == 0)
 			label[61].setText("CPM");
-		if (model->internalParameter[0] == 1)
+		else if (model->internalParameter[0] == 1)
 			label[61].setText("RK4");
+		else if (model->internalParameter[0] == 2)
+			label[61].setText("CPPM");
 		label[61].move(80, 620);
 		label[61].resize(90, 30);
 		break;
@@ -605,7 +607,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[61].setParent(this);
 		if (model->internalParameter[0] == 0)
 			label[61].setText("CPM");
-		if (model->internalParameter[0] == 1)
+		else if (model->internalParameter[0] == 1)
 			label[61].setText("RK4");
 		label[61].move(80, 620);
 		label[61].resize(90, 30);
