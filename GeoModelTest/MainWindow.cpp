@@ -569,7 +569,7 @@ void MainWindow::beginCalculate() {
 	out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
 	//out += "beta耗时" + QString::number(model->betaTimer) + "s，pre耗时" + QString::number(model->preTimer) + "s";
 	//out += "子步" + QString::number(double(model->subSteps / model->endAndReversalPoint));
-	out += "循环数" + QString::number(double(model->CPM / model->endAndReversalPoint));
+	out += "。RK4的次数" + QString::number(double(model->CPM));
 	message->close();
 	delete message;
 	ui.statusBar->showMessage(out);

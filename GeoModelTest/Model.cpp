@@ -549,6 +549,7 @@ void MODEL::IntegratorDMCPPM(bool updateFlag) {
 	depsv = tr(strainIncrement);
 	MATRIX s = stress - p * I;
 	MATRIX de = strainIncrement - depsv / 3 * I;
+	MODEL::RK4Class rk41, rk42, rk43, rk44;
 
 	G = getG(p, ee);
 	K = getK(G);
@@ -560,17 +561,19 @@ void MODEL::IntegratorDMCPPM(bool updateFlag) {
 	sN = s + ds;
 	alphaN = alpha + dAlpha;
 	zN = z + dz;
-	double cos3Theta, Ad, h, Kp, dL, dee;
+	double cos3Theta, Ad, h, Kp, dL = 0, dee;
 	dee = -depsv * (1 + ee);
-	double R[27], RLength, T[27][27], U[27];
+	double R[23], RLength = 0, RLength0 = 0, T[23][23], U[23];
 
 	if (f < 0) {
 		alphaInit = alpha;
 		stressIncrement = ds + depsv * K * I;
 	}
 	else {
-		for (int i = 0; i < 5; i++) {
-			G = getG(p+dp, ee);
+		for (int i = 0; i < 50; i++) {
+			if (p + dp < 0.5)
+				break;
+			G = getG(p+dp, ee + dee);
 			K = getK(G);
 			r = (s + ds) / (p + dp);
 			n = getN(r, alpha + dAlpha);
@@ -592,208 +595,203 @@ void MODEL::IntegratorDMCPPM(bool updateFlag) {
 				tmp = ds - 2 * G * (de - dep);
 				R[2] = tmp(0, 0);
 				R[3] = tmp(1, 1);
-				R[4] = tmp(2, 2);
-				R[5] = tmp(0, 1);
-				R[6] = tmp(0, 2);
-				R[7] = tmp(1, 2);
+				R[4] = tmp(0, 1);
+				R[5] = tmp(0, 2);
+				R[6] = tmp(1, 2);
 				tmp = dep - L * RAp;
-				R[8] = tmp(0, 0);
-				R[9] = tmp(1, 1);
-				R[10] = tmp(2, 2);
-				R[11] = tmp(0, 1);
-				R[12] = tmp(0, 2);
-				R[13] = tmp(1, 2);
+				R[7] = tmp(0, 0);
+				R[8] = tmp(1, 1);
+				R[9] = tmp(0, 1);
+				R[10] = tmp(0, 2);
+				R[11] = tmp(1, 2);
 				tmp = dAlpha - 2.0 / 3 * L * h * (alphaThetaB - alpha);
-				R[14] = tmp(0, 0);
-				R[15] = tmp(1, 1);
-				R[16] = tmp(2, 2);
-				R[17] = tmp(0, 1);
-				R[18] = tmp(0, 2);
-				R[19] = tmp(1, 2);
+				R[12] = tmp(0, 0);
+				R[13] = tmp(1, 1);
+				R[14] = tmp(0, 1);
+				R[15] = tmp(0, 2);
+				R[16] = tmp(1, 2);
 				tmp = dz + L * internalParameter[15] * relu(-1 * D) * (internalParameter[14] * n + z + dz);
-				R[20] = tmp(0, 0);
-				R[21] = tmp(1, 1);
-				R[22] = tmp(2, 2);
-				R[23] = tmp(0, 1);
-				R[24] = tmp(0, 2);
-				R[25] = tmp(1, 2);
-				R[26] = getF(s + ds, alpha + dAlpha, p + dp);
+				R[17] = tmp(0, 0);
+				R[18] = tmp(1, 1);
+				R[19] = tmp(0, 1);
+				R[20] = tmp(0, 2);
+				R[21] = tmp(1, 2);
+				R[22] = getF(s + ds, alpha + dAlpha, p + dp);
 			}
 			
+			if (int(strain(2, 2)*1e6) == 208) {
+				h = h;
+			}
+
 			RLength = 0;
-			for (int j = 0; j < 27; j++)
+			for (int j = 0; j < 23; j++)
 				RLength += R[j] * R[j];
 			RLength = sqrt(RLength);
-			if (RLength < stepLength || R[26] < 0)
+			if (i == 0) 
+				RLength0 = RLength;
+			else if (i > 1) {
+				if (RLength0 < RLength)
+					break;
+			}
+			RLength0 = RLength;
+			if (RLength < stepLength || R[22] < 0)
 				break;
 
-			for (int j = 0; j < 27; j++)
-				for (int k = 0; k < 27; k++)
+			for (int j = 0; j < 23; j++)
+				for (int k = 0; k < 23; k++)
 					T[j][k] = 0;
 			{
 				T[0][0] = 1; T[0][1] = K;
-				T[1][1] = 1; T[1][26] = -D;
-				T[2][2] = 1; T[2][8] = 2 * G;
-				T[3][3] = 1; T[3][9] = 2 * G;
-				T[4][4] = 1; T[4][10] = 2 * G;
-				T[5][5] = 1; T[5][11] = 2 * G;
-				T[6][6] = 1; T[6][12] = 2 * G;
-				T[7][7] = 1; T[7][13] = 2 * G;
-				T[8][0] = -L * (-B * sN(0, 0) * sqrt(1.5) / (internalParameter[8] * pN * pN) - C * (-3 * sN(0, 0) * (-alphaN(0, 0) + sN(0, 0) / pN) / pN / pN - 3 * sN(0, 1) * (-alphaN(0, 1) + sN(0, 1) / pN) / pN / pN - 3.0*sN(0, 2)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN) / internalParameter[8] / internalParameter[8]);
-				T[8][2] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - 3.0*C*(-alphaN(0, 0) + sN(0, 0) / pN) / (pow(internalParameter[8], 2) * pN));
-				T[8][5] = 3.0*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[8][6] = 3.0*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[1][1] = 1; T[1][22] = -D;
+				T[2][2] = 1; T[2][7] = 2 * G;
+				T[3][3] = 1; T[3][8] = 2 * G;
+				T[4][4] = 1; T[4][9] = 2 * G;
+				T[5][5] = 1; T[5][10] = 2 * G;
+				T[6][6] = 1; T[6][11] = 2 * G;
+				T[7][0] = -L * (-B*sN(0, 0)*sqrt(1.5) / (internalParameter[8] * pN*pN) - C * (-3.0*sN(0, 0)*(-alphaN(0, 0) + sN(0, 0) / pN) / pN / pN - 3.0*sN(0, 1)*(-alphaN(0, 1) + sN(0, 1) / pN) / pN / pN - 3.0*sN(0, 2)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN) / internalParameter[8] / internalParameter[8]);
+				T[7][2] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - 3.0*C*(-alphaN(0, 0) + sN(0, 0) / pN) / (pow(internalParameter[8], 2) * pN));
+				T[7][4] = 3.0*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[7][5] = 3.0*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[7][7] = 1;
+				T[7][12] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (3.0*alphaN(0, 0) - 3.0*sN(0, 0) / pN) / pow(internalParameter[8], 2));
+				T[7][14] = C * L*(3.0*alphaN(0, 1) - 3.0*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[7][15] = C * L*(3.0*alphaN(0, 2) - 3.0*sN(0, 2) / pN) / pow(internalParameter[8], 2);
+				T[7][22] = -RAp(0, 0);
+
+				T[8][0] = -L * (-sqrt(1.5)*B*sN(1, 1) / (internalParameter[8] * pN*pN) - C * (-3.0*sN(0, 1)*(-alphaN(0, 1) + sN(0, 1) / pN) / pN / pN - 3.0*sN(1, 1)*(-alphaN(1, 1) + sN(1, 1) / pN) / pN / pN - 3.0*sN(1, 2)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
+				T[8][3] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - 3.0*C*(-alphaN(1, 1) + sN(1, 1) / pN) / (pow(internalParameter[8], 2) * pN));
+				T[8][4] = 3.0*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[8][6] = 3.0*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
 				T[8][8] = 1;
-				T[8][14] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (3.0*alphaN(0, 0) - 3.0*sN(0, 0) / pN) / pow(internalParameter[8], 2));
-				T[8][17] = C * L*(3.0*alphaN(0, 1) - 3.0*sN(0, 1) / pN) / pow(internalParameter[8], 2);
-				T[8][18] = C * L*(3.0*alphaN(0, 2) - 3.0*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[8][26] = RAp(0, 0);
+				T[8][13] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (3.0*alphaN(1, 1) - 3.0*sN(1, 1) / pN) / pow(internalParameter[8], 2));
+				T[8][14] = C * L*(3.0*alphaN(0, 1) - 3.0*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[8][16] = C * L*(3.0*alphaN(1, 2) - 3.0*sN(1, 2) / pN) / pow(internalParameter[8], 2);
+				T[8][22] = -RAp(1, 1);
 
-				T[9][0] = -L * (-sqrt(1.5)*B*sN(1, 1) / (internalParameter[8] * pN*pN) - C * (-3.0*sN(0, 1)*(-alphaN(0, 1) + sN(0, 1) / pN) / pN * pN - 3.0*sN(1, 1)*(-alphaN(1, 1) + sN(1, 1) / pN) / pN * pN - 3.0*sN(1, 2)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN * pN) / pow(internalParameter[8], 2));
-				T[9][3] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - 3.0*C*(-alphaN(1, 1) + sN(1, 1) / pN) / (pow(internalParameter[8], 2) * pN));
-				T[9][5] = 3.0*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[9][7] = 3.0*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[9][0] = -L * (-sqrt(1.5)*B*sN(0, 1) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 0)*(-alphaN(0, 1) + sN(0, 1) / pN) / pN / pN - sN(0, 1) * (-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN / pN - 1.5*sN(0, 1)*(-alphaN(1, 1) + sN(1, 1) / pN) / pN / pN - 1.5*sN(0, 2)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(1, 1) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
+				T[9][2] = 1.5*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[9][3] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[9][4] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN) / pN) / pow(internalParameter[8], 2));
+				T[9][5] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[9][6] = C * L*(-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
 				T[9][9] = 1;
-				T[9][15] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (3.0*alphaN(1, 1) - 3.0*s(1, 1) / pN) / pow(internalParameter[8], 2));
-				T[9][17] = C * L*(3.0*alphaN(0, 1) - 3.0*sN(0, 1) / pN) / pow(internalParameter[8], 2);
-				T[9][19] = C * L*(3.0*alphaN(1, 2) - 3.0*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[9][26] = RAp(1, 1);
+				T[9][12] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[9][13] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[9][14] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(0, 0) + 1.5*alphaN(1, 1) - 1.5*sN(0, 0) / pN - 1.5*sN(1, 1) / pN) / pow(internalParameter[8], 2));
+				T[9][15] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
+				T[9][16] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
+				T[9][22] = -B * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 1) + sN(0, 1) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN)) / pow(internalParameter[8], 2);
 
-				T[10][0] = -L * (-sqrt(1.5)*B*sN(2, 2) / (internalParameter[8] * pN*pN) - C * (-3.0*sN(0, 2)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN * pN - 3.0*sN(1, 2)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN * pN - 3.0*sN(2, 2)*(-alphaN(2, 2) + sN(2, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
-				T[10][4] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - 3.0*C*(-alphaN(2, 2) + sN(2, 2) / pN) / (pow(internalParameter[8], 2) * pN));
-				T[10][6] = 3.0*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[10][7] = 3.0*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * p);
+				T[10][0] = -L * (-sqrt(1.5)*B*sN(0, 2) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 0)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN - 1.5*sN(0, 1)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(0, 2) * (-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN / pN - 1.5*sN(0, 2)*(-alphaN(2, 2) + sN(2, 2) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - sN(2, 2) * (-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
+				T[10][2] = 1.5*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[10][4] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[10][5] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(internalParameter[8], 2));
+				T[10][6] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
 				T[10][10] = 1;
-				T[10][16] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (3.0*alphaN(2, 2) - 3.0*sN(2, 2) / pN) / pow(internalParameter[8], 2));
-				T[10][18] = C * L*(3.0*alphaN(0, 2) - 3.0*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[10][19] = C * L*(3.0*alphaN(1, 2) - 3.0*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[10][26] = RAp(2, 2);
+				T[10][12] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
+				T[10][14] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
+				T[10][15] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(0, 0) + 1.5*alphaN(2, 2) - 1.5*sN(0, 0) / pN - 1.5*sN(2, 2) / pN) / pow(internalParameter[8], 2));
+				T[10][16] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[10][22] = -B * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(internalParameter[8], 2);
 
-				T[11][0] = -L * (-sqrt(1.5)*B*sN(0, 1) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 0)*(-alphaN(0, 1) + sN(0, 1) / pN) / pN / pN - sN(0, 1) * (-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN / pN - 1.5*sN(0, 1)*(-alphaN(1, 1) + sN(1, 1) / pN) / pN / pN - 1.5*sN(0, 2)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(1, 1) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
-				T[11][2] = 1.5*C*L*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[11][3] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[11][5] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN) / pN) / pow(internalParameter[8], 2));
-				T[11][6] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[11][7] = C * L*(-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[11][0] = -L * (-sqrt(1.5)*B*sN(1, 2) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 1)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN - sN(0, 2) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - 1.5*sN(1, 1)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(1, 1) + 1.5*sN(1, 1) / pN) / pN / pN - 1.5*sN(1, 2)*(-alphaN(2, 2) + sN(2, 2) / pN) / pN / pN - sN(2, 2) * (-1.5*alphaN(1, 2) + 1.5*sN(1, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
+				T[11][3] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[11][4] = 1.5*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[11][5] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
+				T[11][6] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(1, 1) + 1.5*sN(1, 1) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(internalParameter[8], 2));
 				T[11][11] = 1;
-				T[11][14] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
-				T[11][15] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / p) / pow(internalParameter[8], 2);
-				T[11][17] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(0, 0) + 1.5*alphaN(1, 1) - 1.5*sN(0, 0) / pN - 1.5*sN(1, 1) / pN) / pow(internalParameter[8], 2));
-				T[11][18] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[11][19] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[11][26] = -B * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 1) + sN(0, 1) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN)) / pow(internalParameter[8], 2);
+				T[11][13] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
+				T[11][14] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
+				T[11][15] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
+				T[11][16] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(1, 1) + 1.5*alphaN(2, 2) - 1.5*sN(1, 1) / pN - 1.5*sN(2, 2) / pN) / pow(internalParameter[8], 2));
+				T[11][22] = -B * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(1, 2) + sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(internalParameter[8], 2);
 
-				T[12][0] = -L * (-sqrt(1.5)*B*sN(0, 2) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 0)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN - 1.5*sN(0, 1)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(0, 2) * (-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN / pN - 1.5*sN(0, 2)*(-alphaN(2, 2) + sN(2, 2) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - sN(2, 2) * (-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
-				T[12][2] = 1.5*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[12][4] = C * L*(-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[12][5] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[12][6] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(internalParameter[8], 2));
-				T[12][7] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[12][12] = 1;
-				T[12][14] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[12][16] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[12][17] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[12][18] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(0, 0) + 1.5*alphaN(2, 2) - 1.5*sN(0, 0) / pN - 1.5*sN(2, 2) / pN) / pow(internalParameter[8], 2));
-				T[12][19] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
-				T[12][26] = -B * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(internalParameter[8], 2);
+				T[12][12] = 2.0 / 3 * L*h + 1;
+				T[12][22] = -2.0 / 3 * h*(-alphaN(0, 0) + alphaThetaB(0, 0));
 
-				T[13][0] = -L * (-sqrt(1.5)*B*sN(1, 2) / (internalParameter[8] * pN*pN) - C * (-1.5*sN(0, 1)*(-alphaN(0, 2) + sN(0, 2) / pN) / pN / pN - sN(0, 2) * (-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / pN / pN - 1.5*sN(1, 1)*(-alphaN(1, 2) + sN(1, 2) / pN) / pN / pN - sN(1, 2) * (-1.5*alphaN(1, 1) + 1.5*sN(1, 1) / pN) / pN / pN - 1.5*sN(1, 2)*(-alphaN(2, 2) + sN(2, 2) / pN) / pN / pN - sN(2, 2) * (-1.5*alphaN(1, 2) + 1.5*sN(1, 2) / pN) / pN / pN) / pow(internalParameter[8], 2));
-				T[13][3] = 1.5*C*L*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[13][4] = C * L*(-1.5*alphaN(1, 2) + 1.5*sN(1, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[13][5] = 1.5*C*L*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[13][6] = C * L*(-1.5*alphaN(0, 1) + 1.5*sN(0, 1) / pN) / (pow(internalParameter[8], 2) * pN);
-				T[13][7] = -L * (sqrt(1.5)*B / (internalParameter[8] * pN) - C * ((-1.5*alphaN(1, 1) + 1.5*sN(1, 1) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(internalParameter[8], 2));
-				T[13][13] = 1;
-				T[13][15] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[13][16] = C * L*(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(internalParameter[8], 2);
-				T[13][17] = C * L*(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(internalParameter[8], 2);
-				T[13][18] = C * L*(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(internalParameter[8], 2);
-				T[13][19] = -L * (-sqrt(1.5)*B / internalParameter[8] - C * (1.5*alphaN(1, 1) + 1.5*alphaN(2, 2) - 1.5*sN(1, 1) / pN - 1.5*sN(2, 2) / pN) / pow(internalParameter[8], 2));
-				T[13][26] = -B * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / internalParameter[8] + C * (1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(1, 2) + sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(internalParameter[8], 2);
+				T[13][13] = 2.0 / 3 * L*h + 1;
+				T[13][22] = -2.0 / 3 * h*(-alphaN(1, 1) + alphaThetaB(1, 1));
 
 				T[14][14] = 2.0 / 3 * L*h + 1;
-				T[14][26] = -2.0 / 3 * h*(-alphaN(0, 0) + alphaThetaB(0, 0));
+				T[14][22] = -2.0 / 3 * h*(-alphaN(0, 1) + alphaThetaB(0, 1));
 
 				T[15][15] = 2.0 / 3 * L*h + 1;
-				T[15][26] = -2.0 / 3 * h*(-alphaN(1, 1) + alphaThetaB(1, 1));
+				T[15][22] = -2.0 / 3 * h*(-alphaN(0, 2) + alphaThetaB(0, 2));
 
 				T[16][16] = 2.0 / 3 * L*h + 1;
-				T[16][26] = -2.0 / 3 * h*(-alphaN(2, 2) + alphaThetaB(2, 2));
+				T[16][22] = -2.0 / 3 * h*(-alphaN(1, 2) + alphaThetaB(1, 2));
 
-				T[17][17] = 2.0 / 3 * L*h + 1;
-				T[17][26] = -2.0 / 3 * h*(-alphaN(0, 1) + alphaThetaB(0, 1));
+				T[17][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 0)*internalParameter[14] / (internalParameter[8] * pN*pN);
+				T[17][2] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
+				T[17][12] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
+				T[17][17] = relu(-D) * L*internalParameter[15] + 1;
+				T[17][22] = relu(-D) * internalParameter[15] * (zN(0, 0) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 0) + sqrt(1.5)*sN(0, 0) / pN) / internalParameter[8]);
 
-				T[18][18] = 2.0 / 3 * L*h + 1;
-				T[18][26] = -2.0 / 3 * h*(-alphaN(0, 2) + alphaThetaB(0, 2));
+				T[18][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(1, 1)*internalParameter[14] / (internalParameter[8] * pN*pN);
+				T[18][3] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
+				T[18][13] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
+				T[18][18] = relu(-D) * L*internalParameter[15] + 1;
+				T[18][22] = relu(-D) * internalParameter[15] * (zN(1, 1) + internalParameter[14] * (-sqrt(1.5)*alphaN(1, 1) + sqrt(1.5)*sN(1, 1) / pN) / internalParameter[8]);
 
-				T[19][19] = 2.0 / 3 * L*h + 1;
-				T[19][26] = -2.0 / 3 * h*(-alphaN(1, 2) + alphaThetaB(1, 2));
+				T[19][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 1)*internalParameter[14] / (internalParameter[8] * pN*pN);
+				T[19][4] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
+				T[19][14] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
+				T[19][19] = relu(-D) * L*internalParameter[15] + 1;
+				T[19][22] = relu(-D) * internalParameter[15] * (zN(0, 1) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / internalParameter[8]);
 
-				T[20][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 0)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[20][2] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
-				T[20][14] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
+				T[20][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 2)*internalParameter[14] / (internalParameter[8] * pN*pN);
+				T[20][5] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
+				T[20][15] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
 				T[20][20] = relu(-D) * L*internalParameter[15] + 1;
-				T[20][26] = relu(-D) * internalParameter[15] * (zN(0, 0) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 0) + sqrt(1.5)*sN(0, 0) / pN) / internalParameter[8]);
+				T[20][22] = relu(-D) * internalParameter[15] * (zN(0, 2) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / internalParameter[8]);
 
-				T[21][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(1, 1)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[21][3] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
-				T[21][15] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
+				T[21][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(1, 2)*internalParameter[14] / (internalParameter[8] * pN*pN);
+				T[21][6] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * p);
+				T[21][16] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
 				T[21][21] = relu(-D) * L*internalParameter[15] + 1;
-				T[21][26] = relu(-D) * internalParameter[15] * (zN(1, 1) + internalParameter[14] * (-sqrt(1.5)*alphaN(1, 1) + sqrt(1.5)*sN(1, 1) / pN) / internalParameter[8]);
-
-				T[22][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(2, 2)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[22][4] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
-				T[22][15] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
-				T[22][22] = relu(-D) * L*internalParameter[15] + 1;
-				T[22][26] = relu(-D) * internalParameter[15] * (zN(2, 2) + internalParameter[14] * (-sqrt(1.5)*alphaN(2, 2) + sqrt(1.5)*sN(2, 2) / pN) / internalParameter[8]);
-
-				T[23][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 1)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[23][5] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
-				T[23][15] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
-				T[23][23] = relu(-D) * L*internalParameter[15] + 1;
-				T[23][26] = relu(-D) * internalParameter[15] * (zN(0, 1) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / internalParameter[8]);
-
-				T[24][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(0, 2)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[24][6] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * pN);
-				T[24][16] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
-				T[24][24] = relu(-D) * L*internalParameter[15] + 1;
-				T[24][26] = relu(-D) * internalParameter[15] * (zN(0, 2) + internalParameter[14] * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / internalParameter[8]);
-
-				T[25][0] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * sN(1, 2)*internalParameter[14] / (internalParameter[8] * pN*pN);
-				T[25][7] = sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / (internalParameter[8] * p);
-				T[25][17] = -sqrt(1.5)*relu(-D)*L*internalParameter[15] * internalParameter[14] / internalParameter[8];
-				T[25][25] = relu(-D) * L*internalParameter[15] + 1;
-				T[25][26] = relu(-D) * internalParameter[15] * (zN(1, 2) + internalParameter[14] * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / internalParameter[8]);
+				T[21][22] = relu(-D) * internalParameter[15] * (zN(1, 2) + internalParameter[14] * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / internalParameter[8]);
 
 				double tmp1 = sqrt((sN - pN * alphaN) % (sN - pN * alphaN));
 
-				T[26][0] = -sqrt(2.0 / 3)*internalParameter[8] + (-1.0*alphaN(0, 0)*(-alphaN(0, 0) * pN + sN(0, 0)) - 2.0*alphaN(0, 1)*(-alphaN(0, 1) * pN + sN(0, 1)) - 2.0*alphaN(0, 2)*(-alphaN(0, 2) * pN + sN(0, 2)) - 1.0*alphaN(1, 1)*(-alphaN(1, 1) * pN + sN(1, 1)) - 2.0*alphaN(1, 2)*(-alphaN(1, 2) * pN + sN(1, 2)) - 1.0*alphaN(2, 2)*(-alphaN(2, 2) * pN + sN(2, 2))) / tmp1;
-				T[26][2] = (-1.0*alphaN(0, 0)*pN + 1.0*sN(0, 0)) / tmp1;
-				T[26][3] = (-1.0*alphaN(1, 1)*pN + 1.0*sN(1, 1)) / tmp1;
-				T[26][4] = (-1.0*alphaN(2, 2)*pN + 1.0*sN(2, 2)) / tmp1;
-				T[26][5] = (-2.0*alphaN(0, 1)*pN + 2.0*sN(0, 1)) / tmp1;
-				T[26][6] = (-2.0*alphaN(0, 2)*pN + 2.0*sN(0, 2)) / tmp1;
-				T[26][7] = (-2.0*alphaN(1, 2)*pN + 2.0*sN(1, 2)) / tmp1;
-				T[26][14] = -1.0*pN*(-alphaN(0, 0) * pN + sN(0, 0)) / tmp1;
-				T[26][15] = -1.0*pN*(-alphaN(1, 1) * pN + sN(1, 1)) / tmp1;
-				T[26][16] = -1.0*pN*(-alphaN(2, 2) * pN + sN(2, 2)) / tmp1;
-				T[26][17] = -2.0*pN*(-alphaN(0, 1) * pN + sN(0, 1)) / tmp1;
-				T[26][18] = -2.0*pN*(-alphaN(0, 2) * pN + sN(0, 2)) / tmp1;
-				T[26][19] = -2.0*pN*(-alphaN(1, 2) * pN + sN(1, 2)) / tmp1;
+				T[22][0] = -sqrt(2.0 / 3)*internalParameter[8] + (-1.0*alphaN(0, 0)*(-alphaN(0, 0) * pN + sN(0, 0)) - 2.0*alphaN(0, 1)*(-alphaN(0, 1) * pN + sN(0, 1)) - 2.0*alphaN(0, 2)*(-alphaN(0, 2) * pN + sN(0, 2)) - 1.0*alphaN(1, 1)*(-alphaN(1, 1) * pN + sN(1, 1)) - 2.0*alphaN(1, 2)*(-alphaN(1, 2) * pN + sN(1, 2)) - 1.0*alphaN(2, 2)*(-alphaN(2, 2) * pN + sN(2, 2))) / tmp1;
+				T[22][2] = (-1.0*alphaN(0, 0)*pN + 1.0*sN(0, 0)) / tmp1;
+				T[22][3] = (-1.0*alphaN(1, 1)*pN + 1.0*sN(1, 1)) / tmp1;
+				T[22][4] = (-2.0*alphaN(0, 1)*pN + 2.0*sN(0, 1)) / tmp1;
+				T[22][5] = (-2.0*alphaN(0, 2)*pN + 2.0*sN(0, 2)) / tmp1;
+				T[22][6] = (-2.0*alphaN(1, 2)*pN + 2.0*sN(1, 2)) / tmp1;
+				T[22][12] = -1.0*pN*(-alphaN(0, 0) * pN + sN(0, 0)) / tmp1;
+				T[22][13] = -1.0*pN*(-alphaN(1, 1) * pN + sN(1, 1)) / tmp1;
+				T[22][14] = -2.0*pN*(-alphaN(0, 1) * pN + sN(0, 1)) / tmp1;
+				T[22][15] = -2.0*pN*(-alphaN(0, 2) * pN + sN(0, 2)) / tmp1;
+				T[22][16] = -2.0*pN*(-alphaN(1, 2) * pN + sN(1, 2)) / tmp1;
+				tmp = -2 * G * RAp + D * K * alphaN - 2.0 / 3 * pN * h * (alphaThetaB - alphaN);
+				T[22][22] = ((tmp % (sN - (p + dp) * (alpha + dAlpha))) / sqrt((s + ds - (p + dp) * (alpha + dAlpha)) % (s + ds - (p + dp) * (alpha + dAlpha))) + sqrt(2.0 / 3) * D * K * internalParameter[8]);
 			}
 
-			Guass(T, R, U);
-			dp = -U[0]; pN = p + dp;
+			double cond = Guass(T, R, U);
+			dp -= U[0]; pN = p + dp;
 			depsvp -= U[1];
-			//ds.clear(); ds(0, 0) = U[2]; ds(1, 1) = U[3]; ds(2, 2) = U[4]; ds(0, 1) = U[5]; ds(0, 2) = U[6]; ds(1, 2) = U[7]; ds(1, 0) = U[5]; ds(2, 0) = U[6]; ds(2, 1) = U[7]; sN = s + ds;
-			ds(0, 0) -= U[2]; ds(1, 1) -= U[3]; ds(2, 2) -= U[4]; ds(0, 1) -= U[5]; ds(0, 2) -= U[6]; ds(1, 2) -= U[7]; ds(1, 0) -= U[5]; ds(2, 0) -= U[6]; ds(2, 1) -= U[7]; sN = s + ds;
-			dep(0, 0) -= U[8]; dep(1, 1) -= U[9]; dep(2, 2) -= U[10]; dep(0, 1) -= U[11]; dep(0, 2) -= U[12]; dep(1, 2) -= U[13]; dep(1, 0) -= U[11]; dep(2, 0) -= U[12]; dep(2, 1) -= U[13];
-			//dAlpha.clear(); dAlpha(0, 0) = U[14]; dAlpha(1, 1) = U[15]; dAlpha(2, 2) = U[16]; dAlpha(0, 1) = U[17]; dAlpha(0, 2) = U[18]; dAlpha(1, 2) = U[19]; dAlpha(1, 0) = U[17]; dAlpha(2, 0) = U[18]; dAlpha(2, 1) = U[19]; alphaN = alpha + dAlpha;
-			dAlpha(0, 0) -= U[14]; dAlpha(1, 1) -= U[15]; dAlpha(2, 2) -= U[16]; dAlpha(0, 1) -= U[17]; dAlpha(0, 2) -= U[18]; dAlpha(1, 2) -= U[19]; dAlpha(1, 0) -= U[17]; dAlpha(2, 0) -= U[18]; dAlpha(2, 1) -= U[19]; alphaN = alpha + dAlpha;
-			//dz.clear(); dz(0, 0) = U[20]; dz(1, 1) = U[21]; dz(2, 2) = U[22]; dz(0, 1) = U[23]; dz(0, 2) = U[24]; dz(1, 2) = U[25]; dz(1, 0) = U[23]; dz(2, 0) = U[24]; dz(2, 1) = U[25]; zN = z + dz;
-			dz(0, 0) -= U[20]; dz(1, 1) -= U[21]; dz(2, 2) -= U[22]; dz(0, 1) -= U[23]; dz(0, 2) -= U[24]; dz(1, 2) -= U[25]; dz(1, 0) -= U[23]; dz(2, 0) -= U[24]; dz(2, 1) -= U[25]; zN = z + dz;
-			dL = -U[26]; L = L + dL;
+			ds(0, 0) -= U[2]; ds(1, 1) -= U[3]; ds(2, 2) += (U[2] + U[3]); ds(0, 1) -= U[4]; ds(0, 2) -= U[5]; ds(1, 2) -= U[6]; ds(1, 0) -= U[4]; ds(2, 0) -= U[5]; ds(2, 1) -= U[6]; sN = s + ds;
+			dep(0, 0) -= U[7]; dep(1, 1) -= U[8]; dep(2, 2) += (U[7] + U[8]); dep(0, 1) -= U[9]; dep(0, 2) -= U[10]; dep(1, 2) -= U[11]; dep(1, 0) -= U[9]; dep(2, 0) -= U[10]; dep(2, 1) -= U[11];
+			dAlpha(0, 0) -= U[12]; dAlpha(1, 1) -= U[13]; dAlpha(2, 2) += (U[12] + U[13]); dAlpha(0, 1) -= U[14]; dAlpha(0, 2) -= U[15]; dAlpha(1, 2) -= U[16]; dAlpha(1, 0) -= U[14]; dAlpha(2, 0) -= U[15]; dAlpha(2, 1) -= U[16]; alphaN = alpha + dAlpha;
+			dz(0, 0) -= U[17]; dz(1, 1) -= U[18]; dz(2, 2) += (U[17] + U[18]); dz(0, 1) -= U[19]; dz(0, 2) -= U[20]; dz(1, 2) -= U[21]; dz(1, 0) -= U[19]; dz(2, 0) -= U[20]; dz(2, 1) -= U[21]; zN = z + dz;
+			dL = -U[22]; L = L + dL;
 		}
+
+		if (p + dp < 0.5 || RLength0 < RLength) {
+			rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
+			rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
+			rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
+			rk44 = RK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, z + rk43.dz, strain, alphaInit);
+			MATRIX dSigma = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
+			dp = tr(dSigma) / 3;
+			ds = dSigma - dp * I;
+			dAlpha = (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
+			dz = (rk41.dz + rk42.dz * 2 + rk43.dz * 2 + rk44.dz) / 6;
+			dee = (rk41.dee + rk42.dee * 2 + rk43.dee * 2 + rk44.dee) / 6;
+			CPM += 1;
+		}
+
 		alpha = alpha + dAlpha;
 		z = z + dz;
 		stressIncrement = ds + dp * I;
@@ -814,9 +812,29 @@ void MODEL::IntegratorDMCPPM(bool updateFlag) {
 	}
 }
 
-void MODEL::Guass(double a[27][27], double b[27], double x[27]) {
-	int i, j, k, n = 27;
-	double c[27];    //存储初等行变换的系数，用于行的相减
+double MODEL::Guass(double a[23][23], double b[23], double x[23]) {
+	double s[22];
+	for (int i = 0; i < 23; i++) {
+		s[i] = abs(a[i][0]);
+		for (int j = 1; j < 23; j++)
+			if (abs(a[i][j]) > s[i])
+				s[i] = abs(a[i][j]);
+	}
+
+	for (int i = 0; i < 23; i++) {
+		for (int j = 0; j < 23; j++) {
+			a[i][j] /= s[i];
+		}
+		b[i] /= s[i];
+	}
+
+	//double aInverse[23][23];
+	//LUP_solve_inverse(a, aInverse);
+	double cond = 0;
+	//cond = getNorm(a) * getNorm(aInverse);
+	
+	int i, j, k, n = 23;
+	double c[23];    //存储初等行变换的系数，用于行的相减
 	//消元的整个过程如下，总共n-1次消元过程。
 	for (k = 0; k < n - 1; k++)
 	{
@@ -847,6 +865,203 @@ void MODEL::Guass(double a[27][27], double b[27], double x[27]) {
 		}
 		x[i] = (b[i] - sum) / a[i][i];
 	}
+
+	return cond;
+}
+
+//LUP分解
+void MODEL::LUP_Descomposition(double A[23][23], double L[23][23], double U[23][23], int P[23])
+{
+	int row = 0;
+	for (int i = 0; i < 23; i++)
+	{
+		P[i] = i;
+	}
+	for (int i = 0; i < 23 - 1; i++)
+	{
+		double p = 0.0;
+		for (int j = i; j < 23; j++)
+		{
+			if (abs(A[j][i]) > p)
+			{
+				p = abs(A[j][i]);
+				row = j;
+			}
+		}
+		if (0 == p)
+		{
+			//cout<< "矩阵奇异，无法计算逆" <<endl;
+			return;
+		}
+
+		//交换P[i]和P[row]
+		int tmp = P[i];
+		P[i] = P[row];
+		P[row] = tmp;
+
+		double tmp2 = 0.0;
+		for (int j = 0; j < 23; j++)
+		{
+			//交换A[i][j]和 A[row][j]
+			tmp2 = A[i][j];
+			A[i][j] = A[row][j];
+			A[row][j] = tmp2;
+		}
+
+		//以下同LU分解
+		double u = A[i][i], l = 0.0;
+		for (int j = i + 1; j < 23; j++)
+		{
+			l = A[j][i] / u;
+			A[j][i] = l;
+			for (int k = i + 1; k < 23; k++)
+			{
+				A[j][k] = A[j][k] - A[i][k] * l;
+			}
+		}
+
+	}
+
+	//构造L和U
+	for (int i = 0; i < 23; i++)
+	{
+		for (int j = 0; j <= i; j++)
+		{
+			if (i != j)
+			{
+				L[i][j] = A[i][j];
+			}
+			else
+			{
+				L[i][j] = 1;
+			}
+		}
+		for (int k = i; k < 23; k++)
+		{
+			U[i][k] = A[i][k];
+
+		}
+
+	}
+}
+//LUP求解方程
+void MODEL::LUP_Solve(double L[23][23], double U[23][23], int P[23], double b[23], double x[23])
+{
+	double y[23]{};
+
+	//正向替换
+	for (int i = 0; i < 23; i++)
+	{
+		y[i] = b[P[i]];
+		for (int j = 0; j < i; j++)
+		{
+			y[i] = y[i] - L[i][j] * y[j];
+		}
+	}
+	//反向替换
+	for (int i = 23 - 1; i >= 0; i--)
+	{
+		x[i] = y[i];
+		for (int j = 23 - 1; j > i; j--)
+		{
+			x[i] = x[i] - U[i][j] * x[j];
+		}
+		x[i] /= U[i][i];
+	}
+
+}
+
+/*****************矩阵原地转置BEGI23********************/
+
+/* 后继 */
+int MODEL::getNext(int i, int m, int n)
+{
+	return (i%n)*m + i / n;
+}
+
+/* 前驱 */
+int MODEL::getPre(int i, int m, int n)
+{
+	return (i%m)*n + i / m;
+}
+
+/* 处理以下标i为起点的环 */
+void MODEL::movedata(double mtx[23][23], int i, int m, int n)
+{
+	double temp = *(*mtx+i); // 暂存
+	int cur = i;    // 当前下标
+	int pre = getPre(cur, m, n);
+	while (pre != i)
+	{
+		*(*mtx + cur) = *(*mtx + pre);
+		cur = pre;
+		pre = getPre(cur, m, n);
+	}
+	*(*mtx + cur) = temp;
+}
+
+/* 转置，即循环处理所有环 */
+void MODEL::transpose(double mtx[23][23], int m, int n)
+{
+	for (int i = 0; i < m*n; ++i)
+	{
+		int next = getNext(i, m, n);
+		while (next > i) // 若存在后继小于i说明重复,就不进行下去了（只有不重复时进入while循环）
+			next = getNext(next, m, n);
+		if (next == i)  // 处理当前环
+			movedata(mtx, i, m, n);
+	}
+}
+/*****************矩阵原地转置E23D********************/
+
+//LUP求逆(将每列b求出的各列x进行组装)
+void MODEL::LUP_solve_inverse(double A[23][23], double inv_A[23][23])
+{
+	//创建矩阵A的副本，注意不能直接用A计算，因为LUP分解算法已将其改变
+	double A_mirror[23][23]{};
+	
+	double inv_A_each[23]{};//矩阵逆的各列
+	//double B[23][23]{};
+	double b[23]{};//b阵为B阵的列矩阵分量
+
+	for (int i = 0; i < 23; i++)
+	{
+		double L[23][23]{};
+		double U[23][23]{};
+		int P[23]{};
+
+		//构造单位阵的每一列
+		for (int i = 0; i < 23; i++)
+		{
+			b[i] = 0;
+		}
+		b[i] = 1;
+
+		//每次都需要重新将A复制一份
+		for (int k = 0; k < 23; k++)
+			for (int j = 0; j < 23; j++)
+				A_mirror[k][j] = A[k][j];
+
+
+		LUP_Descomposition(A_mirror, L, U, P);
+
+		LUP_Solve(L, U, P, b, inv_A_each);
+		memcpy(*inv_A + i * 23, inv_A_each, 23 * sizeof(double));//将各列拼接起来
+	}
+	transpose(inv_A, 23, 23);//由于现在根据每列b算出的x按行存储，因此需转置
+}
+
+double MODEL::getNorm(double a[23][23]) {
+	double norm = 0, tmp[23];
+	for (int i = 0; i < 23; i++) {
+		tmp[i] = 0;
+		for (int j = 0; j < 23; j++) {
+			tmp[i] += abs(a[i][j]);
+		}
+		if (tmp[i] > norm)
+			norm = tmp[i];
+	}
+	return norm;
 }
 
 double MODEL::relu(double x) {

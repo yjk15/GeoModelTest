@@ -54,7 +54,16 @@ private:
 	RK4Class RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit);
 	void IntegratorDMImplicit(bool);
 	void IntegratorDMCPPM(bool);
-	void Guass(double a[27][27], double b[27], double x[27]);
+	double Guass(double a[23][23], double b[23], double x[23]);
+	double getNorm(double a[23][23]);
+	void LUP_Descomposition(double A[23][23], double L[23][23], double U[23][23], int P[23]);
+	void LUP_Solve(double L[23][23], double U[23][23], int P[23], double b[23], double x[23]);
+	int getNext(int i, int m, int n);
+	int getPre(int i, int m, int n);
+	void movedata(double mtx[23][23], int i, int m, int n);
+	void transpose(double mtx[23][23], int m, int n);
+	void LUP_solve_inverse(double A[23][23], double inv_A[23][23]);
+
 	double relu(double x);
 	double getG(double p, double e);
 	double getK(double G);
