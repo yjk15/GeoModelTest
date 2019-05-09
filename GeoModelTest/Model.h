@@ -54,6 +54,7 @@ private:
 	RK4Class RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit);
 	void IntegratorDMImplicit(bool);
 	void IntegratorDMCPPM(bool);
+	void IntegratorDMCPPM2(bool);
 	double Guass(double a[23][23], double b[23], double x[23]);
 	double getNorm(double a[23][23]);
 	void LUP_Descomposition(double A[23][23], double L[23][23], double U[23][23], int P[23]);

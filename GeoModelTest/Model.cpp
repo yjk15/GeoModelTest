@@ -196,7 +196,7 @@ void MODEL::Integrator(bool updateFlag) {
 		else if (int(internalParameter[0]) == 0)
 			IntegratorDMImplicit(updateFlag);
 		else if (int(internalParameter[0]) == 2)
-			IntegratorDMCPPM(updateFlag);
+			IntegratorDMCPPM2(updateFlag);
 		break;
 	case 3:
 		if (int(internalParameter[0]) == 1)
@@ -766,6 +766,569 @@ void MODEL::IntegratorDMCPPM(bool updateFlag) {
 				T[22][16] = -2.0*pN*(-alphaN(1, 2) * pN + sN(1, 2)) / tmp1;
 				tmp = -2 * G * RAp + D * K * alphaN - 2.0 / 3 * pN * h * (alphaThetaB - alphaN);
 				T[22][22] = ((tmp % (sN - (p + dp) * (alpha + dAlpha))) / sqrt((s + ds - (p + dp) * (alpha + dAlpha)) % (s + ds - (p + dp) * (alpha + dAlpha))) + sqrt(2.0 / 3) * D * K * internalParameter[8]);
+			}
+
+			double cond = Guass(T, R, U);
+			dp -= U[0]; pN = p + dp;
+			depsvp -= U[1];
+			ds(0, 0) -= U[2]; ds(1, 1) -= U[3]; ds(2, 2) += (U[2] + U[3]); ds(0, 1) -= U[4]; ds(0, 2) -= U[5]; ds(1, 2) -= U[6]; ds(1, 0) -= U[4]; ds(2, 0) -= U[5]; ds(2, 1) -= U[6]; sN = s + ds;
+			dep(0, 0) -= U[7]; dep(1, 1) -= U[8]; dep(2, 2) += (U[7] + U[8]); dep(0, 1) -= U[9]; dep(0, 2) -= U[10]; dep(1, 2) -= U[11]; dep(1, 0) -= U[9]; dep(2, 0) -= U[10]; dep(2, 1) -= U[11];
+			dAlpha(0, 0) -= U[12]; dAlpha(1, 1) -= U[13]; dAlpha(2, 2) += (U[12] + U[13]); dAlpha(0, 1) -= U[14]; dAlpha(0, 2) -= U[15]; dAlpha(1, 2) -= U[16]; dAlpha(1, 0) -= U[14]; dAlpha(2, 0) -= U[15]; dAlpha(2, 1) -= U[16]; alphaN = alpha + dAlpha;
+			dz(0, 0) -= U[17]; dz(1, 1) -= U[18]; dz(2, 2) += (U[17] + U[18]); dz(0, 1) -= U[19]; dz(0, 2) -= U[20]; dz(1, 2) -= U[21]; dz(1, 0) -= U[19]; dz(2, 0) -= U[20]; dz(2, 1) -= U[21]; zN = z + dz;
+			dL = -U[22]; L = L + dL;
+		}
+
+		if (p + dp < 0.5 || RLength0 < RLength) {
+			rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
+			rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
+			rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
+			rk44 = RK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, z + rk43.dz, strain, alphaInit);
+			MATRIX dSigma = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
+			dp = tr(dSigma) / 3;
+			ds = dSigma - dp * I;
+			dAlpha = (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
+			dz = (rk41.dz + rk42.dz * 2 + rk43.dz * 2 + rk44.dz) / 6;
+			dee = (rk41.dee + rk42.dee * 2 + rk43.dee * 2 + rk44.dee) / 6;
+			CPM += 1;
+		}
+
+		alpha = alpha + dAlpha;
+		z = z + dz;
+		stressIncrement = ds + dp * I;
+		ee = ee + dee;
+	}
+
+	vector<double> tmpPara;
+	tmpPara.clear();
+	if (updateFlag) {
+		tmpPara.push_back(ee);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(z.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
+}
+
+void MODEL::IntegratorDMCPPM2(bool updateFlag) {
+	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0, depsv, dp = 0, depsvp = 0;
+	MATRIX r, ds, n, alpha, z, alphaInit, dz(0, 0, 0), dAlpha(0, 0, 0), I(1, 1, 1);
+	for (int i = 0; i < 9; i++)
+		alpha.matrix[i] = saveParameter.back().at(i + 1);
+	for (int i = 0; i < 9; i++)
+		z.matrix[i] = saveParameter.back().at(i + 10);
+	for (int i = 0; i < 9; i++)
+		alphaInit.matrix[i] = saveParameter.back().at(i + 19);
+	double p = tr(stress) / 3;
+	double ee = saveParameter.back().at(0);
+	depsv = tr(strainIncrement);
+	MATRIX s = stress - p * I;
+	MATRIX de = strainIncrement - depsv / 3 * I;
+	MODEL::RK4Class rk41, rk42, rk43, rk44;
+
+	double G0 = internalParameter[1];
+	double v = internalParameter[2];
+	double M = internalParameter[3];
+	double c = internalParameter[4];
+	double lambdaC = internalParameter[5];
+	double e0 = internalParameter[6];
+	double xi = internalParameter[7];
+	double m = internalParameter[8];
+	double h0 = internalParameter[9];
+	double ch = internalParameter[10];
+	double nb = internalParameter[11];
+	double A0 = internalParameter[12];
+	double nd = internalParameter[13];
+	double zmax = internalParameter[14];
+	double cz = internalParameter[15];
+
+	G = getG(p, ee);
+	K = getK(G);
+	ds = 2 * G * (strainIncrement - depsv / 3 * I);
+	dp = K * depsv;
+	f = getF(s + ds, alpha, p + dp);
+	MATRIX alphaThetaD, alphaThetaB, RAp, dep(0, 0, 0), tmp, sN, alphaN, zN;
+	double pN = p + dp;
+	sN = s + ds;
+	alphaN = alpha + dAlpha;
+	zN = z + dz;
+	double cos3Theta, Ad, h, Kp, dL = 0, dee;
+	dee = -depsv * (1 + ee);
+	double R[23], RLength = 0, RLength0 = 0, T[23][23], U[23];
+	double dKOverdp, dGOverdp;
+	MATRIX dnOverdp, dnOverds, dnOverdAlpha, n2 = n * n;
+	double dcos3thetaOverdp, dgOverdp, dcos3thetaOverds[5], dcos3thetaOverdAlpha[5];
+	double dgOverds[5], dgOverdAlpha[5], dAdOverdp, dAdOverdAlpha[5], dAdOverds[5], dpsiOverdp;
+	double dDOverdp, dDOverds[5], dDOverdAlpha[5], dDOverdz[5];
+	double dBOverdp, dBOverds[5], dBOverdAlpha[5];
+	double dCOverdp, dCOverds[5], dCOverdAlpha[5];
+	double dhOverdp, dhOverds[5], dhOverdAlpha[5];
+	double dAlphaBthetaOverdp[5];
+
+	if (f < 0) {
+		alphaInit = alpha;
+		stressIncrement = ds + depsv * K * I;
+	}
+	else {
+		for (int i = 0; i < 50; i++) {
+			if (p + dp < 0.5)
+				break;
+			G = getG(p + dp, ee + dee);
+			K = getK(G);
+			r = (s + ds) / (p + dp);
+			n = getN(r, alpha + dAlpha);
+			cos3Theta = getCos3Theta(n);
+			g = getg(cos3Theta);
+			alphaThetaD = getAlphaThetaD(n, p + dp, ee + dee, g);
+			alphaThetaB = getAlphaThetaB(n, p + dp, ee + dee, g);
+			Ad = getAd(z + dz, n);
+			B = getB(cos3Theta, g);
+			C = getC(g);
+			D = getD(n, Ad, alpha + dAlpha, alphaThetaD);
+			h = getH(ee + dee, p + dp, alpha + dAlpha, alphaInit, n);
+			RAp = getRAp(B, C, n);
+			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
+
+			{
+				R[0] = dp - K * (depsv - depsvp);
+				R[1] = depsvp - L * D;
+				tmp = ds - 2 * G * (de - dep);
+				R[2] = tmp(0, 0);
+				R[3] = tmp(1, 1);
+				R[4] = tmp(0, 1);
+				R[5] = tmp(0, 2);
+				R[6] = tmp(1, 2);
+				tmp = dep - L * RAp;
+				R[7] = tmp(0, 0);
+				R[8] = tmp(1, 1);
+				R[9] = tmp(0, 1);
+				R[10] = tmp(0, 2);
+				R[11] = tmp(1, 2);
+				tmp = dAlpha - 2.0 / 3 * L * h * (alphaThetaB - alpha);
+				R[12] = tmp(0, 0);
+				R[13] = tmp(1, 1);
+				R[14] = tmp(0, 1);
+				R[15] = tmp(0, 2);
+				R[16] = tmp(1, 2);
+				tmp = dz + L * cz * relu(-1 * D) * (zmax * n + z + dz);
+				R[17] = tmp(0, 0);
+				R[18] = tmp(1, 1);
+				R[19] = tmp(0, 1);
+				R[20] = tmp(0, 2);
+				R[21] = tmp(1, 2);
+				R[22] = getF(s + ds, alpha + dAlpha, p + dp);
+			}
+
+			RLength = 0;
+			for (int j = 0; j < 23; j++)
+				RLength += R[j] * R[j];
+			RLength = sqrt(RLength);
+			if (i == 0)
+				RLength0 = RLength;
+			else if (i > 1) {
+				if (RLength0 < RLength)
+					break;
+			}
+			RLength0 = RLength;
+			if (RLength < stepLength)
+				break;
+
+			for (int j = 0; j < 23; j++)
+				for (int k = 0; k < 23; k++)
+					T[j][k] = 0;
+			dGOverdp = G0 * sqrt(pAtmos / pN) / 2 * pow(2.97 - ee - dee, 2) / (1 + ee + dee);
+			dKOverdp = dGOverdp * 2 * (1 + v) / 3 / (1 - 2 * v);
+
+			dnOverdp(0, 0) = sN(0, 0) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN);
+			dnOverdp(1, 1) = sN(1, 1) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN);
+			dnOverdp(2, 2) = sN(2, 2) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN);
+			dnOverdp(0, 1) = sN(0, 1) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN); dnOverdp(1, 0) = dnOverdp(0, 1);
+			dnOverdp(0, 2) = sN(0, 2) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN); dnOverdp(2, 0) = dnOverdp(0, 1);
+			dnOverdp(1, 2) = sN(1, 2) / sqrt(2.0 / 3) / m * (-1.0 / pN / pN); dnOverdp(2, 1) = dnOverdp(1, 2);
+
+			dcos3thetaOverdp = -13.5*sN(0, 0)*pow((-alphaN(0, 0) + sN(0, 0) / pN), 2) / (pow(m, 3) * pow(p, 2)) - 13.5*sN(0, 0)*pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(0, 0)*pow((-alphaN(0, 2) + sN(0, 2) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 1)*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 1)*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 1)*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 2)*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 2)*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(0, 2)*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(1, 1)*pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(1, 1)*pow((-alphaN(1, 1) + sN(1, 1) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(1, 1)*pow((-alphaN(1, 2) + sN(1, 2) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(1, 2)*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(1, 2)*(-alphaN(1, 1) + sN(1, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 27 * sN(1, 2)*(-alphaN(1, 2) + sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(2, 2)*pow((-alphaN(0, 2) + sN(0, 2) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(2, 2)*pow((-alphaN(1, 2) + sN(1, 2) / pN), 2) / (pow(m, 3) * pow(pN, 2)) - 13.5*sN(2, 2)*pow((-alphaN(2, 2) + sN(2, 2) / pN), 2) / (pow(m, 3) * pow(pN, 2));
+
+			dcos3thetaOverds[0] = 13.5*(pow((-alphaN(0, 0) + sN(0, 0) / pN), 2) / (pow(m, 3) * pN) + pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / (pow(m, 3) * pN) + pow((-alphaN(0, 2) + sN(0, 2) / pN), 2) / (pow(m, 3) * pN));
+			dcos3thetaOverds[1] = 13.5*(pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / (pow(m, 3) * pN) + pow((-alphaN(1, 1) + sN(1, 1) / pN), 2) / (pow(m, 3) * pN) + pow((-alphaN(1, 2) + sN(1, 2) / pN), 2) / (pow(m, 3) * pN));
+			dcos3thetaOverds[2] = 27 * ((-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(m, 3) * pN) + (-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) / (pow(m, 3) * pN) + (-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pN));
+			dcos3thetaOverds[3] = 27 * ((-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(m, 3) * pN) + (-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pN) + (-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / (pow(m, 3) * pN));
+			dcos3thetaOverds[4] = 27 * ((-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(m, 3) * pN) + (-alphaN(1, 1) + sN(1, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 3) * pN) + (-alphaN(1, 2) + sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / (pow(m, 3) * pN));
+
+			dcos3thetaOverdAlpha[0] = -13.5*pow((-alphaN(0, 0) + sN(0, 0) / pN), 2) / pow(m, 3) - 13.5*pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / pow(m, 3) - 13.5*pow((-alphaN(0, 2) + sN(0, 2) / pN), 2) / pow(m, 3);
+			dcos3thetaOverdAlpha[1] = -13.5*pow((-alphaN(0, 1) + sN(0, 1) / pN), 2) / pow(m, 3) - 13.5*pow((-alphaN(1, 1) + sN(1, 1) / pN), 2) / pow(m, 3) - 13.5*pow((-alphaN(1, 2) + sN(1, 2) / pN), 2) / pow(m, 3);
+			dcos3thetaOverdAlpha[2] = 27 * (-alphaN(0, 0) + sN(0, 0) / pN)*(alphaN(0, 1) - sN(0, 1) / pN) / pow(m, 3) + 27 * (alphaN(0, 1) - sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) / pow(m, 3) + 27 * (alphaN(0, 2) - sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / pow(m, 3);
+			dcos3thetaOverdAlpha[3] = 27 * (-alphaN(0, 0) + sN(0, 0) / pN)*(alphaN(0, 2) - sN(0, 2) / pN) / pow(m, 3) + 27 * (alphaN(0, 1) - sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) / pow(m, 3) + 27 * (alphaN(0, 2) - sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / pow(m, 3);
+			dcos3thetaOverdAlpha[4] = 27 * (-alphaN(0, 1) + sN(0, 1) / pN)*(alphaN(0, 2) - sN(0, 2) / pN) / pow(m, 3) + 27 * (-alphaN(1, 1) + sN(1, 1) / pN)*(alphaN(1, 2) - sN(1, 2) / pN) / pow(m, 3) + 27 * (alphaN(1, 2) - sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN) / pow(m, 3);
+
+			dgOverdp = 2 * c / pow(1 + c - (1 - c) * cos3Theta, 2) * dcos3thetaOverdp;
+			for (int j = 0; j < 5; j++) {
+				dgOverds[j] = 2 * c / pow(1 + c - (1 - c) * cos3Theta, 2) * dcos3thetaOverds[j];
+				dgOverdAlpha[j] = 2 * c / pow(1 + c - (1 - c) * cos3Theta, 2) * dcos3thetaOverdAlpha[j];
+			}
+
+			dBOverdp = 3 * (1 - c) / 2 / c * (dgOverdp * cos3Theta + g * dcos3thetaOverdp);
+			for (int j = 0; j < 5; j++) {
+				dBOverds[j] = 3 * (1 - c) / 2 / c * (dgOverds[j] * cos3Theta + g * dcos3thetaOverds[j]);
+				dBOverdAlpha[j] = 3 * (1 - c) / 2 / c * (dgOverdAlpha[j] * cos3Theta + g * dcos3thetaOverdAlpha[j]);
+			}
+
+			dCOverdp = 3 * sqrt(1.5) * (1 - c) / c * dgOverdp;
+			for (int j = 0; j < 5; j++){
+				dCOverds[j] = 3 * sqrt(1.5) * (1 - c) / c * dgOverds[j];
+				dCOverdAlpha[j] = 3 * sqrt(1.5) * (1 - c) / c * dgOverdAlpha[j];
+			}
+
+			if (zN % n > 0) {
+				dAdOverdp = A0 * (zN % dnOverdp);
+				dAdOverdAlpha[0] = -A0 * zN(0, 0) / m / sqrt(2.0 / 3);
+				dAdOverdAlpha[1] = -A0 * zN(1, 1) / m / sqrt(2.0 / 3);
+				dAdOverdAlpha[2] = -2 * A0 * zN(0, 1) / m / sqrt(2.0 / 3);
+				dAdOverdAlpha[3] = -2 * A0 * zN(0, 2) / m / sqrt(2.0 / 3);
+				dAdOverdAlpha[4] = -2 * A0 * zN(1, 2) / m / sqrt(2.0 / 3);
+				dAdOverds[0] = A0 * zN(0, 0) / pN / m / sqrt(2.0 / 3);
+				dAdOverds[1] = A0 * zN(1, 1) / pN / m / sqrt(2.0 / 3);
+				dAdOverds[2] = 2 * A0 * zN(0, 1) / pN / m / sqrt(2.0 / 3);
+				dAdOverds[3] = 2 * A0 * zN(0, 2) / pN / m / sqrt(2.0 / 3);
+				dAdOverds[4] = 2 * A0 * zN(1, 2) / pN / m / sqrt(2.0 / 3);
+			}
+			else {
+				dAdOverdp = 0;
+				for (int j = 0; j < 5; j++)
+					dAdOverdAlpha[j] = 0;
+				for (int j = 0; j < 5; j++)
+					dAdOverds[j] = 0;
+			}
+
+			dpsiOverdp = -lambdaC * xi * pow(1 / pAtmos, xi) * pow(pN, xi - 1);
+
+			dDOverdp = dAdOverdp * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dGOverdp * M * exp(nd * (ee + dee - getEc(pN))) + sqrt(2.0 / 3) * g * M * exp(ee + dee - getEc(pN)) * nd * dpsiOverdp - (alphaN % dnOverdp));
+
+			dDOverds[0] = dAdOverds[0] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverds[0] * M * exp(nd * (ee + dee - getEc(pN))) - alphaN(0, 0) / pN / sqrt(2.0 / 3) / m);
+			dDOverds[1] = dAdOverds[1] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverds[1] * M * exp(nd * (ee + dee - getEc(pN))) - alphaN(1, 1) / pN / sqrt(2.0 / 3) / m);
+			dDOverds[2] = dAdOverds[2] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverds[2] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * alphaN(0, 1) / pN / sqrt(2.0 / 3) / m);
+			dDOverds[3] = dAdOverds[3] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverds[3] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * alphaN(0, 2) / pN / sqrt(2.0 / 3) / m);
+			dDOverds[4] = dAdOverds[4] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverds[4] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * alphaN(1, 2) / pN / sqrt(2.0 / 3) / m);
+
+			dDOverdAlpha[0] = dAdOverdAlpha[0] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverdAlpha[0] * M * exp(nd * (ee + dee - getEc(pN))) - sqrt(1.5) / m * (sN(0, 0) / pN - 2 * alphaN(0, 0)));
+			dDOverdAlpha[1] = dAdOverdAlpha[1] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverdAlpha[1] * M * exp(nd * (ee + dee - getEc(pN))) - sqrt(1.5) / m * (sN(1, 1) / pN - 2 * alphaN(1, 1)));
+			dDOverdAlpha[2] = dAdOverdAlpha[2] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverdAlpha[2] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * sqrt(1.5) / m * (sN(0, 1) / pN - 2 * alphaN(0, 1)));
+			dDOverdAlpha[3] = dAdOverdAlpha[3] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverdAlpha[3] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * sqrt(1.5) / m * (sN(0, 2) / pN - 2 * alphaN(0, 2)));
+			dDOverdAlpha[4] = dAdOverdAlpha[4] * ((alphaThetaD - alphaN) % n) + Ad * (sqrt(2.0 / 3) * dgOverdAlpha[4] * M * exp(nd * (ee + dee - getEc(pN))) - 2 * sqrt(1.5) / m * (sN(1, 2) / pN - 2 * alphaN(1, 2)));
+
+			if (zN % n > 0) {
+				dDOverdz[0] = A0 * zN(0, 0) * n(0, 0) * ((alphaThetaD - alpha) % n);
+				dDOverdz[1] = A0 * zN(1, 1) * n(1, 1) * ((alphaThetaD - alpha) % n);
+				dDOverdz[2] = 2 * A0 * zN(0, 1) * n(0, 1) * ((alphaThetaD - alpha) % n);
+				dDOverdz[3] = 2 * A0 * zN(0, 2) * n(0, 2) * ((alphaThetaD - alpha) % n);
+				dDOverdz[4] = 2 * A0 * zN(1, 2) * n(1, 2) * ((alphaThetaD - alpha) % n);
+			}
+			
+			double db0Overdp = G0 * h0 * (1 - ch * (ee + dee)) * sqrt(pAtmos / pN) / pN * (-0.5);
+			double alphaNalphaInitN = ((alphaN - alphaInit) % n);
+			if (abs(alphaNalphaInitN) < 1e-8) {
+				dhOverdp = 0;
+				for (int j = 0; j < 5; j++)
+					dhOverds[j] = 0;
+			}
+			else {
+				dhOverdp = (db0Overdp - h * ((alphaN - alphaInit) % dnOverdp)) / ((alphaN - alphaInit) % n);
+				dhOverds[0] = -h / alphaNalphaInitN * ((alphaN(0, 0) - alphaInit(0, 0)) / pN / m / sqrt(2.0 / 3));
+				dhOverds[1] = -h / alphaNalphaInitN * ((alphaN(1, 1) - alphaInit(1, 1)) / pN / m / sqrt(2.0 / 3));
+				dhOverds[2] = -h / alphaNalphaInitN * ((alphaN(0, 1) - alphaInit(0, 1)) / pN / m / sqrt(2.0 / 3));
+				dhOverds[3] = -h / alphaNalphaInitN * ((alphaN(0, 2) - alphaInit(0, 2)) / pN / m / sqrt(2.0 / 3));
+				dhOverds[4] = -h / alphaNalphaInitN * ((alphaN(1, 2) - alphaInit(1, 2)) / pN / m / sqrt(2.0 / 3));
+				dhOverdAlpha[0] = -h / alphaNalphaInitN * (n(0, 0) + (alphaN(0, 0) - alphaInit(0, 0)) / m / sqrt(2.0 / 3) );
+				dhOverdAlpha[1] = -h / alphaNalphaInitN * (n(1, 1) + (alphaN(1, 1) - alphaInit(1, 1)) / m / sqrt(2.0 / 3));
+				dhOverdAlpha[2] = -h / alphaNalphaInitN * (n(0, 1) + (alphaN(0, 1) - alphaInit(0, 1)) / m / sqrt(2.0 / 3));
+				dhOverdAlpha[3] = -h / alphaNalphaInitN * (n(0, 2) + (alphaN(0, 2) - alphaInit(0, 2)) / m / sqrt(2.0 / 3));
+				dhOverdAlpha[4] = -h / alphaNalphaInitN * (n(1, 2) + (alphaN(1, 2) - alphaInit(1, 2)) / m / sqrt(2.0 / 3));
+			}
+
+			dAlphaBthetaOverdp[0] = sqrt(2.0 / 3) * dnOverdp(0, 0) * (g * M * exp(-nb * (ee+ dee - getEc(pN)))) + sqrt(2.0 / 3) * n(0, 0) * M * exp(dee + dee - getEc(pN)) * (dgOverdp - nb * dpsiOverdp * g);
+			dAlphaBthetaOverdp[1] = sqrt(2.0 / 3) * dnOverdp(1, 1) * (g * M * exp(-nb * (ee + dee - getEc(pN)))) + sqrt(2.0 / 3) * n(1, 1) * M * exp(dee + dee - getEc(pN)) * (dgOverdp - nb * dpsiOverdp * g);
+			dAlphaBthetaOverdp[2] = sqrt(2.0 / 3) * dnOverdp(0, 1) * (g * M * exp(-nb * (ee + dee - getEc(pN)))) + sqrt(2.0 / 3) * n(0, 1) * M * exp(dee + dee - getEc(pN)) * (dgOverdp - nb * dpsiOverdp * g);
+			dAlphaBthetaOverdp[3] = sqrt(2.0 / 3) * dnOverdp(0, 2) * (g * M * exp(-nb * (ee + dee - getEc(pN)))) + sqrt(2.0 / 3) * n(0, 2) * M * exp(dee + dee - getEc(pN)) * (dgOverdp - nb * dpsiOverdp * g);
+			dAlphaBthetaOverdp[4] = sqrt(2.0 / 3) * dnOverdp(1, 2) * (g * M * exp(-nb * (ee + dee - getEc(pN)))) + sqrt(2.0 / 3) * n(1, 2) * M * exp(dee + dee - getEc(pN)) * (dgOverdp - nb * dpsiOverdp * g);
+
+			{
+				T[0][0] = 1 - dKOverdp * (depsv - depsvp); T[0][1] = K;
+
+				T[1][0] = -dDOverdp * L; 
+				T[1][1] = 1; 
+				T[1][2] = -L * dDOverds[0];
+				T[1][3] = -L * dDOverds[1];
+				T[1][4] = -L * dDOverds[2];
+				T[1][5] = -L * dDOverds[3];
+				T[1][6] = -L * dDOverds[4];
+				T[1][12] = -L * dDOverdAlpha[0];
+				T[1][13] = -L * dDOverdAlpha[1];
+				T[1][14] = -L * dDOverdAlpha[2];
+				T[1][15] = -L * dDOverdAlpha[3];
+				T[1][16] = -L * dDOverdAlpha[4];
+				T[1][17] = -L * dDOverdz[0];
+				T[1][18] = -L * dDOverdz[1];
+				T[1][19] = -L * dDOverdz[2];
+				T[1][20] = -L * dDOverdz[3];
+				T[1][21] = -L * dDOverdz[4];
+				T[1][22] = -D;
+
+				T[2][0] = -2 * dGOverdp * (de(0, 0) - dep(0, 0)); T[2][2] = 1; T[2][7] = 2 * G;
+				T[3][0] = -2 * dGOverdp * (de(1, 1) - dep(1, 1)); T[3][3] = 1; T[3][8] = 2 * G;
+				T[4][0] = -2 * dGOverdp * (de(0, 1) - dep(0, 1)); T[4][4] = 1; T[4][9] = 2 * G;
+				T[5][0] = -2 * dGOverdp * (de(0, 2) - dep(0, 2)); T[5][5] = 1; T[5][10] = 2 * G;
+				T[6][0] = -2 * dGOverdp * (de(1, 2) - dep(1, 2)); T[6][6] = 1; T[6][11] = 2 * G;
+
+				tmp = n * dnOverdp + dnOverdp * n;
+				T[7][0] = -L * (B * dnOverdp(0, 0) + dBOverdp * n(0, 0) - C * tmp(0, 0) - dCOverdp * (n2(0, 0) - 1.0 / 3));
+				T[7][2] = -L * (sqrt(1.5)*B / (m * pN) + dBOverds[0] * n(0, 0) - 3.0*C*(-alphaN(0, 0) + sN(0, 0) / pN) / (pow(m, 2) * pN) - dCOverds[0] * (n2(0, 0) - 1.0 / 3));
+				T[7][3] = -L * (dBOverds[1] * n(0, 0) - dCOverds[1] * (n2(0, 0) - 1.0 / 3));
+				T[7][4] = -L * (dBOverds[2] * n(0, 0) + 3.0*C*(alphaN(0, 1) - sN(0, 1) / pN) / (pow(m, 2) * pN) - dCOverds[2] * (n2(0, 0) - 1.0 / 3));
+				T[7][5] = -L * (dBOverds[3] * n(0, 0) + 3.0*C*(alphaN(0, 2) - sN(0, 2) / pN) / (pow(m, 2) * pN) - dCOverds[3] * (n2(0, 0) - 1.0 / 3));
+				T[7][6] = -L * (dBOverds[4] * n(0, 0) - dCOverds[4] * (n2(0, 0) - 1.0 / 3));
+				T[7][7] = 1;
+				T[7][12] = -L * (-sqrt(1.5)*B / m + dBOverdAlpha[0] * n(0, 0) - C * (3.0*alphaN(0, 0) - 3.0*sN(0, 0) / pN) / pow(m, 2) - dCOverdAlpha[0] * (n2(0, 0) - 1.0 / 3));
+				T[7][13] = -L * (dBOverdAlpha[1] * n(0, 0) - dCOverdAlpha[1] * (n2(0, 0) - 1.0 / 3));
+				T[7][14] = -L * (dBOverdAlpha[2] * n(0, 0) + C*(-3.0*alphaN(0, 1) + 3.0*sN(0, 1) / pN) / pow(m, 2) - dCOverdAlpha[2] * (n2(0, 0) - 1.0 / 3));
+				T[7][15] = -L * (dBOverdAlpha[3] * n(0, 0) +  C*(-3.0*alphaN(0, 2) + 3.0*sN(0, 2) / pN) / pow(m, 2) - dCOverdAlpha[3] * (n2(0, 0) - 1.0 / 3));
+				T[7][16] = -L * (dBOverdAlpha[4] * n(0, 0) - dCOverdAlpha[4] * (n2(0, 0) - 1.0 / 3));
+				T[7][22] = -RAp(0, 0);
+
+				T[8][0] = -L * (B * dnOverdp(1, 1) + dBOverdp * n(1, 1) - C * tmp(1, 1) - dCOverdp * (n2(1, 1) - 1.0 / 3));
+				T[8][2] = -L * (dBOverds[0] * n(1, 1) - dCOverds[0] * (n2(1, 1) - 1.0 / 3));
+				T[8][3] = -L * (sqrt(1.5)*B / (m * pN) + dBOverds[1] * n(1, 1) - 3.0*C*(-alphaN(1, 1) + sN(1, 1) / pN) / (pow(m, 2) * pN) - dCOverds[1] * (n2(1, 1) - 1.0 / 3));
+				T[8][4] = -L * (dBOverds[2] * n(1, 1) - dCOverds[2] * (n2(1, 1) - 1.0 / 3) + 3.0*C*(alphaN(0, 1) - sN(0, 1) / pN) / (pow(m, 2) * pN));
+				T[8][5] = -L * (dBOverds[3] * n(1, 1) - dCOverds[3] * (n2(1, 1) - 1.0 / 3));
+				T[8][6] = -L * (dBOverds[4] * n(1, 1) - dCOverds[4] * (n2(1, 1) - 1.0 / 3) + 3.0*C*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 2) * pN));
+				T[8][8] = 1;
+				T[8][12] = -L * (dBOverdAlpha[0] * n(1, 1) - dCOverdAlpha[0] * (n2(1, 1) - 1.0 / 3));
+				T[8][13] = -L * (dBOverdAlpha[1] * n(1, 1) - dCOverdAlpha[1] * (n2(1, 1) - 1.0 / 3) - sqrt(1.5)*B / m - C * (3.0*alphaN(1, 1) - 3.0*sN(1, 1) / pN) / pow(m, 2));
+				T[8][14] = -L * (dBOverdAlpha[2] * n(1, 1) - dCOverdAlpha[2] * (n2(1, 1) - 1.0 / 3) + C * (3.0*alphaN(0, 1) - 3.0*sN(0, 1) / pN) / pow(m, 2));
+				T[8][15] = -L * (dBOverdAlpha[3] * n(1, 1) - dCOverdAlpha[3] * (n2(1, 1) - 1.0 / 3));
+				T[8][16] = -L * (dBOverdAlpha[4] * n(1, 1) - dCOverdAlpha[4] * (n2(1, 1) - 1.0 / 3) + C * (3.0*alphaN(1, 2) - 3.0*sN(1, 2) / pN) / pow(m, 2));
+				T[8][22] = -RAp(1, 1);
+
+				T[9][0] = -L * (B * dnOverdp(0, 1) + dBOverdp * n(0, 1) - C * tmp(0, 1) - dCOverdp * n2(0, 1));
+				T[9][2] = -L * (dBOverds[0] * n(0, 1) + 1.5*C*(alphaN(0, 1) - sN(0, 1) / pN) / (pow(m, 2) * pN) - dCOverds[0] * n2(0, 1));
+				T[9][3] = -L * (dBOverds[1] * n(0, 1) + 1.5*C*(alphaN(0, 1) - sN(0, 1) / pN) / (pow(m, 2) * pN) - dCOverds[1] * n2(0, 1));
+				T[9][4] = -L * (dBOverds[2] * n(0, 1) + sqrt(1.5)*B / (m * pN) - C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN) / pN + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN) / pN) / pow(m, 2) - dCOverds[2] * n2(0, 1));
+				T[9][5] = -L * (dBOverds[3] * n(0, 1) + 1.5*C*(alphaN(1, 2) - sN(1, 2) / pN) / (pow(m, 2) * pN) - dCOverds[3] * n2(0, 1));
+				T[9][6] = -L * (dBOverds[4] * n(0, 1) + 1.5*C*(alphaN(0, 2) - sN(0, 2) / pN) / (pow(m, 2) * pN) - dCOverds[4] * n2(0, 1));
+				T[9][9] = 1;
+				T[9][12] = -L * (dBOverdAlpha[0] * n(0, 1) + C*1.5*(-alphaN(0, 1) + sN(0, 1) / pN) / pow(m, 2) - dCOverdAlpha[0] * n2(0, 1));
+				T[9][13] = -L * (dBOverdAlpha[1] * n(0, 1) + C*1.5*(-alphaN(0, 1) + sN(0, 1) / pN) / pow(m, 2) - dCOverdAlpha[1] * n2(0, 1));
+				T[9][14] = -L * (dBOverdAlpha[2] * n(0, 1) - sqrt(1.5)*B / m - C * (1.5*alphaN(0, 0) + 1.5*alphaN(1, 1) - 1.5*sN(0, 0) / pN - 1.5*sN(1, 1) / pN) / pow(m, 2) - dCOverdAlpha[2] * n2(0, 1));
+				T[9][15] = -L * (dBOverdAlpha[3] * n(0, 1) + C * (-1.5*alphaN(1, 2) + 1.5*sN(1, 2) / pN) / pow(m, 2) - dCOverdAlpha[3] * n2(0, 1));
+				T[9][16] = -L * (dBOverdAlpha[4] * n(0, 1) + C * (-1.5*alphaN(0, 2) + 1.5*sN(0, 2) / pN) / pow(m, 2) - dCOverdAlpha[4] * n2(0, 1));
+				T[9][22] = -B * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / m + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 1) + sN(0, 1) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 1) + sN(1, 1) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN)) / pow(m, 2);
+
+				T[10][0] = -L * (B * dnOverdp(0, 2) + dBOverdp * n(0, 2) - C * tmp(0, 2) - dCOverdp * n2(0, 2));
+				T[10][2] = -L * (dBOverds[0] * n(0, 2) - dCOverds[0] * n2(0, 2) + 1.5*C*(alphaN(0, 2) - sN(0, 2) / pN) / (pow(m, 2) * pN));
+				T[10][3] = -L * (dBOverds[1] * n(0, 2) - dCOverds[1] * n2(0, 2));
+				T[10][4] = -L * (dBOverds[2] * n(0, 2) - dCOverds[2] * n2(0, 2) - 1.5*C*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 2) * pN));
+				T[10][5] = -L * (sqrt(1.5)*B / (m * pN) + dBOverds[3] * n(0, 2) - dCOverds[3] * n2(0, 2) - C * ((-1.5*alphaN(0, 0) + 1.5*sN(0, 0) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(m, 2));
+				T[10][6] = -L * (dBOverds[4] * n(0, 2) - dCOverds[4] * n2(0, 2) - 1.5*C*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(m, 2) * pN));
+				T[10][10] = 1;
+				T[10][12] = -L * (dBOverdAlpha[0] * n(0, 2) - dCOverdAlpha[0] * n2(0, 2) - C * (1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(m, 2));
+				T[10][13] = -L * (dBOverdAlpha[1] * n(0, 2) - dCOverdAlpha[1] * n2(0, 2));
+				T[10][14] = -L * (dBOverdAlpha[2] * n(0, 2) - dCOverdAlpha[2] * n2(0, 2) - C * (1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(m, 2));
+				T[10][15] = -L * (-sqrt(1.5)*B / m + dBOverdAlpha[3] * n(0, 2) - dCOverdAlpha[3] * n2(0, 2) - C * (1.5*alphaN(0, 0) + 1.5*alphaN(2, 2) - 1.5*sN(0, 0) / pN - 1.5*sN(2, 2) / pN) / pow(m, 2));
+				T[10][16] = -L * (dBOverdAlpha[4] * n(0, 2) - dCOverdAlpha[4] * n2(0, 2) - C * (1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(m, 2));
+				T[10][22] = -B * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / m + C * (1.5*(-alphaN(0, 0) + sN(0, 0) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(0, 2) + sN(0, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(m, 2);
+
+				T[11][0] = -L * (B * dnOverdp(1, 2) - C * tmp(0, 2) + dBOverdp * n(0, 2) - C * n2(0, 2));
+				T[11][2] = -L * (dBOverds[0] * n(0, 2) - dCOverds[0] * n2(0, 2));
+				T[11][3] = -L * (dBOverds[1] * n(0, 2) - dCOverds[1] * n2(0, 2) - 1.5*C*(-alphaN(1, 2) + sN(1, 2) / pN) / (pow(m, 2) * pN));
+				T[11][4] = -L * (dBOverds[2] * n(0, 2) - dCOverds[1] * n2(0, 2) - 1.5*C*(-alphaN(0, 2) + sN(0, 2) / pN) / (pow(m, 2) * pN));
+				T[11][5] = -L * (dBOverds[3] * n(0, 2) - dCOverds[1] * n2(0, 2) - 1.5*C*(-alphaN(0, 1) + sN(0, 1) / pN) / (pow(m, 2) * pN));
+				T[11][6] = -L * (dBOverds[4] * n(0, 2) - dCOverds[4] * n2(0, 2)  + sqrt(1.5)*B / (m * pN) - C * ((-1.5*alphaN(1, 1) + 1.5*sN(1, 1) / pN) / pN + 1.5*(-alphaN(2, 2) + sN(2, 2) / pN) / pN) / pow(m, 2));
+				T[11][11] = 1;
+				T[11][12] = -L * (dBOverdAlpha[0] * n(0, 2) - dCOverdAlpha[0] * n2(0, 2));
+				T[11][13] = -L * (dBOverdAlpha[1] * n(0, 2) - dCOverdAlpha[1] * n2(0, 2) - C *(1.5*alphaN(1, 2) - 1.5*sN(1, 2) / pN) / pow(m, 2));
+				T[11][14] = -L * (dBOverdAlpha[2] * n(0, 2) - dCOverdAlpha[2] * n2(0, 2) - C *(1.5*alphaN(0, 2) - 1.5*sN(0, 2) / pN) / pow(m, 2));
+				T[11][15] = -L * (dBOverdAlpha[3] * n(0, 2) - dCOverdAlpha[3] * n2(0, 2) - C *(1.5*alphaN(0, 1) - 1.5*sN(0, 1) / pN) / pow(m, 2));
+				T[11][16] = -L * (dBOverdAlpha[4] * n(0, 2) - dCOverdAlpha[4] * n2(0, 2) -sqrt(1.5)*B / m - C * (1.5*alphaN(1, 1) + 1.5*alphaN(2, 2) - 1.5*sN(1, 1) / pN - 1.5*sN(2, 2) / pN) / pow(m, 2));
+				T[11][22] = -B * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / m + C * (1.5*(-alphaN(0, 1) + sN(0, 1) / pN)*(-alphaN(0, 2) + sN(0, 2) / pN) + 1.5*(-alphaN(1, 1) + sN(1, 1) / pN)*(-alphaN(1, 2) + sN(1, 2) / pN) + 1.5*(-alphaN(1, 2) + sN(1, 2) / pN)*(-alphaN(2, 2) + sN(2, 2) / pN)) / pow(m, 2);
+
+				T[12][0] = -2.0 / 3 * L * (dhOverdp * (alphaThetaB(0, 0) - alphaN(0, 0)) + h * dAlphaBthetaOverdp[0]);
+				T[12][2] = -2.0 / 3 * L * (dhOverds[0] * (alphaThetaB(0, 0) - alphaInit(0,0)) + h * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) / pN /m / sqrt(2.0 / 3));
+				T[12][3] = -2.0 / 3 * L * (dhOverds[1] * (alphaThetaB(0, 0) - alphaInit(0, 0)));
+				T[12][4] = -2.0 / 3 * L * (dhOverds[2] * (alphaThetaB(0, 0) - alphaInit(0, 0)));
+				T[12][5] = -2.0 / 3 * L * (dhOverds[3] * (alphaThetaB(0, 0) - alphaInit(0, 0)));
+				T[12][6] = -2.0 / 3 * L * (dhOverds[4] * (alphaThetaB(0, 0) - alphaInit(0, 0)));
+				T[12][12] = 1 - 2.0 / 3 * L * (dhOverdAlpha[0] * (alphaThetaB(0, 0) - alphaN(0, 0)) + h * (-1.0 / sqrt(2.0 / 3) / m * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) - 1));
+				T[12][13] = -2.0 / 3 * L * dhOverdAlpha[1] * (alphaThetaB(0, 0) - alphaN(0, 0));
+				T[12][14] = -2.0 / 3 * L * dhOverdAlpha[2] * (alphaThetaB(0, 0) - alphaN(0, 0));
+				T[12][15] = -2.0 / 3 * L * dhOverdAlpha[3] * (alphaThetaB(0, 0) - alphaN(0, 0));
+				T[12][16] = -2.0 / 3 * L * dhOverdAlpha[4] * (alphaThetaB(0, 0) - alphaN(0, 0));
+				T[12][22] = -2.0 / 3 * h*(-alphaN(0, 0) + alphaThetaB(0, 0));
+
+				T[13][0] = -2.0 / 3 * L * (dhOverdp * (alphaThetaB(1, 1) - alphaN(1, 1)) + h * dAlphaBthetaOverdp[1]);
+				T[13][2] = -2.0 / 3 * L * (dhOverds[0] * (alphaThetaB(1, 1) - alphaInit(1, 1)));
+				T[13][3] = -2.0 / 3 * L * (dhOverds[1] * (alphaThetaB(1, 1) - alphaInit(1, 1)) + h * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) / pN / m / sqrt(2.0 / 3));
+				T[13][4] = -2.0 / 3 * L * (dhOverds[2] * (alphaThetaB(1, 1) - alphaInit(1, 1)));
+				T[13][5] = -2.0 / 3 * L * (dhOverds[3] * (alphaThetaB(1, 1) - alphaInit(1, 1)));
+				T[13][6] = -2.0 / 3 * L * (dhOverds[4] * (alphaThetaB(1, 1) - alphaInit(1, 1)));
+				T[13][12] = -2.0 / 3 * L * dhOverdAlpha[0] * (alphaThetaB(1, 1) - alphaN(1, 1));
+				T[13][13] = 1 - 2.0 / 3 * L * (dhOverdAlpha[1] * (alphaThetaB(1, 1) - alphaN(1, 1)) + h * (-1.0 / sqrt(2.0 / 3) / m * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) - 1));
+				T[13][14] = -2.0 / 3 * L * dhOverdAlpha[2] * (alphaThetaB(1, 1) - alphaN(1, 1));
+				T[13][15] = -2.0 / 3 * L * dhOverdAlpha[3] * (alphaThetaB(1, 1) - alphaN(1, 1));
+				T[13][16] = -2.0 / 3 * L * dhOverdAlpha[4] * (alphaThetaB(1, 1) - alphaN(1, 1));
+				T[13][22] = -2.0 / 3 * h*(-alphaN(1, 1) + alphaThetaB(1, 1));
+
+				T[14][0] = -2.0 / 3 * L * (dhOverdp * (alphaThetaB(0, 1) - alphaN(0, 1)) + h * dAlphaBthetaOverdp[2]);
+				T[14][2] = -2.0 / 3 * L * (dhOverds[0] * (alphaThetaB(0, 1) - alphaInit(0, 1)));
+				T[14][3] = -2.0 / 3 * L * (dhOverds[1] * (alphaThetaB(0, 1) - alphaInit(0, 1)));
+				T[14][4] = -2.0 / 3 * L * (dhOverds[2] * (alphaThetaB(0, 1) - alphaInit(0, 1)) + h * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) / pN / m / sqrt(2.0 / 3));
+				T[14][5] = -2.0 / 3 * L * (dhOverds[3] * (alphaThetaB(0, 1) - alphaInit(0, 1)));
+				T[14][6] = -2.0 / 3 * L * (dhOverds[4] * (alphaThetaB(0, 1) - alphaInit(0, 1)));
+				T[14][12] = -2.0 / 3 * L * dhOverdAlpha[0] * (alphaThetaB(0, 1) - alphaN(0, 1));
+				T[14][13] = -2.0 / 3 * L * dhOverdAlpha[1] * (alphaThetaB(0, 1) - alphaN(0, 1));
+				T[14][14] = 1 - 2.0 / 3 * L * (dhOverdAlpha[2] * (alphaThetaB(0, 1) - alphaN(0, 1)) + h * (-1.0 / sqrt(2.0 / 3) / m * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) - 1));
+				T[14][15] = -2.0 / 3 * L * dhOverdAlpha[3] * (alphaThetaB(0, 1) - alphaN(0, 1));
+				T[14][16] = -2.0 / 3 * L * dhOverdAlpha[4] * (alphaThetaB(0, 1) - alphaN(0, 1));
+				T[14][22] = -2.0 / 3 * h*(-alphaN(0, 1) + alphaThetaB(0, 1));
+
+				T[15][0] = -2.0 / 3 * L * (dhOverdp * (alphaThetaB(0, 2) - alphaN(0, 2)) + h * dAlphaBthetaOverdp[3]);
+				T[15][2] = -2.0 / 3 * L * (dhOverds[0] * (alphaThetaB(0, 2) - alphaInit(0, 2)));
+				T[15][3] = -2.0 / 3 * L * (dhOverds[1] * (alphaThetaB(0, 2) - alphaInit(0, 2)));
+				T[15][4] = -2.0 / 3 * L * (dhOverds[2] * (alphaThetaB(0, 2) - alphaInit(0, 2)));
+				T[15][5] = -2.0 / 3 * L * (dhOverds[3] * (alphaThetaB(0, 2) - alphaInit(0, 2)) + h * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) / pN / m / sqrt(2.0 / 3));
+				T[15][6] = -2.0 / 3 * L * (dhOverds[4] * (alphaThetaB(0, 2) - alphaInit(0, 2)));
+				T[15][12] = -2.0 / 3 * L * dhOverdAlpha[0] * (alphaThetaB(0, 2) - alphaN(0, 2));
+				T[15][13] = -2.0 / 3 * L * dhOverdAlpha[1] * (alphaThetaB(0, 2) - alphaN(0, 2));
+				T[15][14] = -2.0 / 3 * L * dhOverdAlpha[2] * (alphaThetaB(0, 2) - alphaN(0, 2));
+				T[15][15] = 1 - 2.0 / 3 * L * (dhOverdAlpha[3] * (alphaThetaB(0, 2) - alphaN(0, 2)) + h * (-1.0 / sqrt(2.0 / 3) / m * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) - 1));
+				T[15][16] = -2.0 / 3 * L * dhOverdAlpha[4] * (alphaThetaB(0, 2) - alphaN(0, 2));
+				T[15][22] = -2.0 / 3 * h*(-alphaN(0, 2) + alphaThetaB(0, 2));
+
+				T[16][0] = -2.0 / 3 * L * (dhOverdp * (alphaThetaB(1, 2) - alphaN(1, 2)) + h * dAlphaBthetaOverdp[4]);
+				T[16][2] = -2.0 / 3 * L * (dhOverds[0] * (alphaThetaB(1, 2) - alphaInit(1, 2)));
+				T[16][3] = -2.0 / 3 * L * (dhOverds[1] * (alphaThetaB(1, 2) - alphaInit(1, 2)));
+				T[16][4] = -2.0 / 3 * L * (dhOverds[2] * (alphaThetaB(1, 2) - alphaInit(1, 2)));
+				T[16][5] = -2.0 / 3 * L * (dhOverds[3] * (alphaThetaB(1, 2) - alphaInit(1, 2)));
+				T[16][6] = -2.0 / 3 * L * (dhOverds[4] * (alphaThetaB(1, 2) - alphaInit(1, 2)) + h * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) / pN / m / sqrt(2.0 / 3));
+				T[16][12] = -2.0 / 3 * L * dhOverdAlpha[0] * (alphaThetaB(1, 2) - alphaN(1, 2));
+				T[16][13] = -2.0 / 3 * L * dhOverdAlpha[1] * (alphaThetaB(1, 2) - alphaN(1, 2));
+				T[16][14] = -2.0 / 3 * L * dhOverdAlpha[2] * (alphaThetaB(1, 2) - alphaN(1, 2));
+				T[16][15] = -2.0 / 3 * L * dhOverdAlpha[3] * (alphaThetaB(1, 2) - alphaN(1, 2));
+				T[16][16] = 1 - 2.0 / 3 * L * (dhOverdAlpha[4] * (alphaThetaB(1, 2) - alphaN(1, 2)) + h * (-1.0 / sqrt(2.0 / 3) / m * (sqrt(2.0 / 3) * (g * M * exp(-nb * (ee + dee - getEc(pN))) - m)) - 1));
+				T[16][22] = -2.0 / 3 * h*(-alphaN(1, 2) + alphaThetaB(1, 2));
+
+				if (D < 0) {
+					T[17][0] = sqrt(1.5)*D*L*cz * sN(0, 0)*zmax / (m * pN*pN) - cz * L * dDOverdp * (zmax * n(0, 0) + zN(0, 0));
+					T[17][2] = -sqrt(1.5)*D*L*cz * zmax / (m * pN) - cz * L * dDOverds[0] * (zmax * n(0, 0) + zN(0, 0));
+					T[17][3] = -cz * L * dDOverds[1] * (zmax * n(0, 0) + zN(0, 0));
+					T[17][4] = -cz * L * dDOverds[2] * (zmax * n(0, 0) + zN(0, 0));
+					T[17][5] = -cz * L * dDOverds[3] * (zmax * n(0, 0) + zN(0, 0));
+					T[17][6] = -cz * L * dDOverds[4] * (zmax * n(0, 0) + zN(0, 0));
+					T[17][12] = -cz * L * (dDOverdAlpha[0] * (zmax * n(0, 0) + zN(0, 0)) - D * zmax / m * sqrt(1.5));
+					T[17][13] = -cz * L * (dDOverdAlpha[1] * (zmax * n(0, 0) + zN(0, 0)));
+					T[17][14] = -cz * L * (dDOverdAlpha[2] * (zmax * n(0, 0) + zN(0, 0)));
+					T[17][15] = -cz * L * (dDOverdAlpha[3] * (zmax * n(0, 0) + zN(0, 0)));
+					T[17][16] = -cz * L * (dDOverdAlpha[4] * (zmax * n(0, 0) + zN(0, 0)));
+					T[17][17] = -D * L*cz + dDOverdz[0] * cz * L * (zmax * n(0, 0) + zN(0, 0)) + 1;
+					T[17][18] = dDOverdz[1] * cz * L * (zmax * n(0, 0) + zN(0, 0));
+					T[17][19] = dDOverdz[2] * cz * L * (zmax * n(0, 0) + zN(0, 0));
+					T[17][20] = dDOverdz[3] * cz * L * (zmax * n(0, 0) + zN(0, 0));
+					T[17][21] = dDOverdz[4] * cz * L * (zmax * n(0, 0) + zN(0, 0));
+					T[17][22] = relu(-D) * cz * (zN(0, 0) + zmax * (-sqrt(1.5)*alphaN(0, 0) + sqrt(1.5)*sN(0, 0) / pN) / m);
+
+					T[18][0] = sqrt(1.5)*D*L*cz * sN(1, 1)*zmax / (m * pN*pN) - cz * L * dDOverdp * (zmax * n(1, 1) + zN(1, 1));
+					T[18][2] = -cz * L * dDOverds[0] * (zmax * n(1, 1) + zN(1, 1));
+					T[18][3] = -sqrt(1.5)*D*L*cz * zmax / (m * pN) - cz * L * dDOverds[1] * (zmax * n(1, 1) + zN(1, 1));
+					T[18][4] = -cz * L * dDOverds[2] * (zmax * n(1, 1) + zN(1, 1));
+					T[18][5] = -cz * L * dDOverds[3] * (zmax * n(1, 1) + zN(1, 1));
+					T[18][6] = -cz * L * dDOverds[4] * (zmax * n(1, 1) + zN(1, 1));
+					T[18][12] = -cz * L * (dDOverdAlpha[0] * (zmax * n(1, 1) + zN(1, 1)));
+					T[18][13] = -cz * L * (dDOverdAlpha[1] * (zmax * n(1, 1) + zN(1, 1)) - D * zmax / m * sqrt(1.5));
+					T[18][14] = -cz * L * (dDOverdAlpha[2] * (zmax * n(1, 1) + zN(1, 1)));
+					T[18][15] = -cz * L * (dDOverdAlpha[3] * (zmax * n(1, 1) + zN(1, 1)));
+					T[18][16] = -cz * L * (dDOverdAlpha[4] * (zmax * n(1, 1) + zN(1, 1)));
+					T[18][17] = dDOverdz[0] * cz * L * (zmax * n(1, 1) + zN(1, 1));
+					T[18][18] = dDOverdz[1] * cz * L * (zmax * n(1, 1) + zN(1, 1)) - D * L*cz + 1;
+					T[18][19] = dDOverdz[2] * cz * L * (zmax * n(1, 1) + zN(1, 1));
+					T[18][20] = dDOverdz[3] * cz * L * (zmax * n(1, 1) + zN(1, 1));
+					T[18][21] = dDOverdz[4] * cz * L * (zmax * n(1, 1) + zN(1, 1));
+					T[18][22] = relu(-D) * cz * (zN(1, 1) + zmax * (-sqrt(1.5)*alphaN(1, 1) + sqrt(1.5)*sN(1, 1) / pN) / m);
+
+					T[19][0] = sqrt(1.5)*D*L*cz * sN(0, 1)*zmax / (m * pN*pN) - cz * L * dDOverdp * (zmax * n(0, 1) + zN(0, 1));
+					T[19][2] = -cz * L * dDOverds[0] * (zmax * n(0, 1) + zN(0, 1));
+					T[19][3] = -cz * L * dDOverds[1] * (zmax * n(0, 1) + zN(0, 1));
+					T[19][4] = -sqrt(1.5)*D*L*cz * zmax / (m * pN) - cz * L * dDOverds[2] * (zmax * n(0, 1) + zN(0, 1));
+					T[19][5] = -cz * L * dDOverds[3] * (zmax * n(0, 1) + zN(0, 1));
+					T[19][6] = -cz * L * dDOverds[4] * (zmax * n(0, 1) + zN(0, 1));
+					T[19][12] = -cz * L * (dDOverdAlpha[0] * (zmax * n(0, 1) + zN(0, 1)));
+					T[19][13] = -cz * L * (dDOverdAlpha[1] * (zmax * n(0, 1) + zN(0, 1)));
+					T[19][14] = -cz * L * (dDOverdAlpha[2] * (zmax * n(0, 1) + zN(0, 1)) - D * zmax / m * sqrt(1.5));
+					T[19][15] = -cz * L * (dDOverdAlpha[3] * (zmax * n(0, 1) + zN(0, 1)));
+					T[19][16] = -cz * L * (dDOverdAlpha[4] * (zmax * n(0, 1) + zN(0, 1)));
+					T[19][17] = dDOverdz[0] * cz * L * (zmax * n(0, 1) + zN(0, 1));
+					T[19][18] = dDOverdz[1] * cz * L * (zmax * n(0, 1) + zN(0, 1));
+					T[19][19] = dDOverdz[2] * cz * L * (zmax * n(0, 1) + zN(0, 1)) - D * L*cz + 1;
+					T[19][20] = dDOverdz[3] * cz * L * (zmax * n(0, 1) + zN(0, 1));
+					T[19][21] = dDOverdz[4] * cz * L * (zmax * n(0, 1) + zN(0, 1));
+					T[19][22] = relu(-D) * cz * (zN(0, 1) + zmax * (-sqrt(1.5)*alphaN(0, 1) + sqrt(1.5)*sN(0, 1) / pN) / m);
+
+					T[20][0] = sqrt(1.5)*D*L*cz * sN(0, 2)*zmax / (m * pN*pN) - cz * L * dDOverdp * (zmax * n(0, 2) + zN(0, 2));
+					T[20][2] = -cz * L * dDOverds[0] * (zmax * n(0, 2) + zN(0, 2));
+					T[20][3] = -cz * L * dDOverds[1] * (zmax * n(0, 2) + zN(0, 2));
+					T[20][4] = -cz * L * dDOverds[2] * (zmax * n(0, 2) + zN(0, 2));
+					T[20][5] = -sqrt(1.5)*D*L*cz * zmax / (m * pN) - cz * L * dDOverds[3] * (zmax * n(0, 2) + zN(0, 2));
+					T[20][6] = -cz * L * dDOverds[4] * (zmax * n(0, 2) + zN(0, 2));
+					T[20][12] = -cz * L * (dDOverdAlpha[0] * (zmax * n(0, 2) + zN(0, 2)));
+					T[20][13] = -cz * L * (dDOverdAlpha[1] * (zmax * n(0, 2) + zN(0, 2)));
+					T[20][14] = -cz * L * (dDOverdAlpha[2] * (zmax * n(0, 2) + zN(0, 2)));
+					T[20][15] = -cz * L * (dDOverdAlpha[3] * (zmax * n(0, 2) + zN(0, 2)) - D * zmax / m * sqrt(1.5));
+					T[20][16] = -cz * L * (dDOverdAlpha[4] * (zmax * n(0, 2) + zN(0, 2)));
+					T[20][17] = dDOverdz[0] * cz * L * (zmax * n(0, 2) + zN(0, 2));
+					T[20][18] = dDOverdz[1] * cz * L * (zmax * n(0, 2) + zN(0, 2));
+					T[20][19] = dDOverdz[2] * cz * L * (zmax * n(0, 2) + zN(0, 2));
+					T[20][20] = dDOverdz[3] * cz * L * (zmax * n(0, 2) + zN(0, 2)) - D * L*cz + 1;
+					T[20][21] = dDOverdz[4] * cz * L * (zmax * n(0, 2) + zN(0, 2));
+					T[20][22] = relu(-D) * cz * (zN(0, 2) + zmax * (-sqrt(1.5)*alphaN(0, 2) + sqrt(1.5)*sN(0, 2) / pN) / m);
+
+					T[21][0] = sqrt(1.5)*D*L*cz * sN(1, 2)*zmax / (m * pN*pN) - cz * L * dDOverdp * (zmax * n(1, 2) + zN(1, 2));
+					T[21][2] = -cz * L * dDOverds[0] * (zmax * n(1, 2) + zN(1, 2));
+					T[21][3] = -cz * L * dDOverds[1] * (zmax * n(1, 2) + zN(1, 2));
+					T[21][4] = -cz * L * dDOverds[2] * (zmax * n(1, 2) + zN(1, 2));
+					T[21][5] = -cz * L * dDOverds[3] * (zmax * n(1, 2) + zN(1, 2));
+					T[21][6] = -sqrt(1.5)*D*L*cz * zmax / (m * pN) - cz * L * dDOverds[4] * (zmax * n(1, 2) + zN(1, 2));
+					T[21][12] = -cz * L * (dDOverdAlpha[0] * (zmax * n(1, 2) + zN(1, 2)));
+					T[21][13] = -cz * L * (dDOverdAlpha[1] * (zmax * n(1, 2) + zN(1, 2)));
+					T[21][14] = -cz * L * (dDOverdAlpha[2] * (zmax * n(1, 2) + zN(1, 2)));
+					T[21][15] = -cz * L * (dDOverdAlpha[3] * (zmax * n(1, 2) + zN(1, 2)));
+					T[21][16] = -cz * L * (dDOverdAlpha[4] * (zmax * n(1, 2) + zN(1, 2)) - D * zmax / m * sqrt(1.5));
+					T[21][17] = dDOverdz[0] * cz * L * (zmax * n(1, 2) + zN(1, 2));
+					T[21][18] = dDOverdz[1] * cz * L * (zmax * n(1, 2) + zN(1, 2));
+					T[21][19] = dDOverdz[2] * cz * L * (zmax * n(1, 2) + zN(1, 2));
+					T[21][20] = dDOverdz[3] * cz * L * (zmax * n(1, 2) + zN(1, 2));
+					T[21][21] = dDOverdz[4] * cz * L * (zmax * n(1, 2) + zN(1, 2)) - D * L*cz + 1;
+					T[21][22] = relu(-D) * cz * (zN(1, 2) + zmax * (-sqrt(1.5)*alphaN(1, 2) + sqrt(1.5)*sN(1, 2) / pN) / m);
+				}
+				else {
+					T[17][17] = 1;
+					T[18][18] = 1;
+					T[19][19] = 1;
+					T[20][20] = 1;
+					T[21][21] = 1;
+				}
+				double tmp1 = sqrt((sN - pN * alphaN) % (sN - pN * alphaN));
+
+				T[22][0] = -sqrt(2.0 / 3)*m + (-1.0*alphaN(0, 0)*(-alphaN(0, 0) * pN + sN(0, 0)) - 2.0*alphaN(0, 1)*(-alphaN(0, 1) * pN + sN(0, 1)) - 2.0*alphaN(0, 2)*(-alphaN(0, 2) * pN + sN(0, 2)) - 1.0*alphaN(1, 1)*(-alphaN(1, 1) * pN + sN(1, 1)) - 2.0*alphaN(1, 2)*(-alphaN(1, 2) * pN + sN(1, 2)) - 1.0*alphaN(2, 2)*(-alphaN(2, 2) * pN + sN(2, 2))) / tmp1;
+				T[22][2] = (-1.0*alphaN(0, 0)*pN + 1.0*sN(0, 0)) / tmp1;
+				T[22][3] = (-1.0*alphaN(1, 1)*pN + 1.0*sN(1, 1)) / tmp1;
+				T[22][4] = (-2.0*alphaN(0, 1)*pN + 2.0*sN(0, 1)) / tmp1;
+				T[22][5] = (-2.0*alphaN(0, 2)*pN + 2.0*sN(0, 2)) / tmp1;
+				T[22][6] = (-2.0*alphaN(1, 2)*pN + 2.0*sN(1, 2)) / tmp1;
+				T[22][12] = -1.0*pN*(-alphaN(0, 0) * pN + sN(0, 0)) / tmp1;
+				T[22][13] = -1.0*pN*(-alphaN(1, 1) * pN + sN(1, 1)) / tmp1;
+				T[22][14] = -2.0*pN*(-alphaN(0, 1) * pN + sN(0, 1)) / tmp1;
+				T[22][15] = -2.0*pN*(-alphaN(0, 2) * pN + sN(0, 2)) / tmp1;
+				T[22][16] = -2.0*pN*(-alphaN(1, 2) * pN + sN(1, 2)) / tmp1;
+				tmp = -2 * G * RAp + D * K * alphaN - 2.0 / 3 * pN * h * (alphaThetaB - alphaN);
+				T[22][22] = ((tmp % (sN - pN * alphaN)) / sqrt((sN - pN * alphaN) % (sN - pN * alphaN)) + sqrt(2.0 / 3) * D * K * m);
 			}
 
 			double cond = Guass(T, R, U);
