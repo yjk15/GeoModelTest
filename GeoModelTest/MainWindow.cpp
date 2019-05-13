@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
 	resultFilePath = "";
 	inputModelE = new ModelParaInputE(this);
 	inputModelDM = new ModelParaInputDM(this);
+	inputModelDMF = new ModelParaInputDMF(this);
 	inputModelEB = new ModelParaInputEB(this);
 	inputModelCycliq = new ModelParaInputCycliq(this);
 	initState = new InitState(this);
@@ -120,6 +121,7 @@ void MainWindow::setModel() {
 	consModel->addItem(QWidget::tr("EB模型"));
 	consModel->addItem(QWidget::tr("Dafalias and Manzari模型"));
 	consModel->addItem(QWidget::tr("Cycliq模型"));
+	consModel->addItem(QWidget::tr("改进DM模型"));
 	connect(consModel, SIGNAL(currentIndexChanged(int)), this, SLOT(setConsModel(int)));
 
 	QPushButton *modelParameter = new QPushButton(this);
@@ -488,6 +490,10 @@ void MainWindow::setModelParameter() {
 		connect(inputModelCycliq, SIGNAL(sendParaCycliq(double*)), this, SLOT(receiveCycliq(double*)));
 		inputModelCycliq->show();
 		break;
+	case 4:
+		connect(inputModelCycliq, SIGNAL(sendParaDMF(double*)), this, SLOT(receiveDMF(double*)));
+		inputModelDMF->show();
+		break;
 	default:
 		QMessageBox::information(this, tr("hello"), tr("Hello World!"));
 	}
@@ -508,6 +514,12 @@ void MainWindow::receiveEB(double Kd1, double Kd2, double nd2, double nud, doubl
 
 void MainWindow::receiveDM(double* para) {
 	for (int i = 0; i < 16; i++) {
+		model->internalParameter[i] = para[i];
+	}
+}
+
+void MainWindow::receiveDMF(double* para) {
+	for (int i = 0; i < 17; i++) {
 		model->internalParameter[i] = para[i];
 	}
 }
@@ -569,7 +581,7 @@ void MainWindow::beginCalculate() {
 	out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
 	//out += "beta耗时" + QString::number(model->betaTimer) + "s，pre耗时" + QString::number(model->preTimer) + "s";
 	//out += "子步" + QString::number(double(model->subSteps / model->endAndReversalPoint));
-	out += "。RK4的次数" + QString::number(double(model->CPM));
+	//out += "。RK4的次数" + QString::number(double(model->CPM));
 	message->close();
 	delete message;
 	ui.statusBar->showMessage(out);

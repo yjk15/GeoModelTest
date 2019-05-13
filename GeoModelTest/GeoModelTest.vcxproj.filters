@@ -72,6 +72,9 @@
     <ClCompile Include="ModelParaInputCycliq.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModelParaInputDMF.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="MainWindow.ui">
@@ -84,6 +87,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="ModelParaInputCycliq.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="ModelParaInputDMF.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -124,6 +130,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ModelParaInputCycliq.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ModelParaInputDMF.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

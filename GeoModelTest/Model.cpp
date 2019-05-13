@@ -17,7 +17,7 @@ MODEL::MODEL() {
 	axisY = 0;
 
 	stepLength = 1e-5;
-
+	stepCounter = 0;
 	internalParameter = new double[30];
 	for (int i = 0; i < 30; i++)
 		internalParameter[i] = 0;
@@ -75,6 +75,20 @@ void MODEL::Simulate() {
 		tmpPara.push_back(0.0);
 		for (int i = 0; i < 9; i++)
 			tmpPara.push_back(alpha.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
+	else if (model == 4) {
+		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, nF;
+		nF(0, 0) = -1 / sqrt(6); nF(1, 1) = -1 / sqrt(6); nF(2, 2) = 2 / sqrt(6);
+		vector<double> tmpPara;
+		tmpPara.push_back(ee);
+		tmpPara.push_back(internalParameter[14]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(nF.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
 		saveParameter.push_back(tmpPara);
 	}
 
@@ -203,6 +217,9 @@ void MODEL::Integrator(bool updateFlag) {
 			IntegratorCycliqExplicit(updateFlag);
 		else if (int(internalParameter[0]) == 0)
 			IntegratorCycliq(updateFlag);
+		break;
+	case 4:
+		IntegratorDMF(updateFlag);
 		break;
 	default:
 		stressIncrement.clear();
@@ -1432,7 +1449,6 @@ double MODEL::Guass(double a[23][23], double b[23], double x[23]) {
 	return cond;
 }
 
-//LUP分解
 void MODEL::LUP_Descomposition(double A[23][23], double L[23][23], double U[23][23], int P[23])
 {
 	int row = 0;
@@ -1507,7 +1523,7 @@ void MODEL::LUP_Descomposition(double A[23][23], double L[23][23], double U[23][
 
 	}
 }
-//LUP求解方程
+
 void MODEL::LUP_Solve(double L[23][23], double U[23][23], int P[23], double b[23], double x[23])
 {
 	double y[23]{};
@@ -1534,21 +1550,16 @@ void MODEL::LUP_Solve(double L[23][23], double U[23][23], int P[23], double b[23
 
 }
 
-/*****************矩阵原地转置BEGI23********************/
-
-/* 后继 */
 int MODEL::getNext(int i, int m, int n)
 {
 	return (i%n)*m + i / n;
 }
 
-/* 前驱 */
 int MODEL::getPre(int i, int m, int n)
 {
 	return (i%m)*n + i / m;
 }
 
-/* 处理以下标i为起点的环 */
 void MODEL::movedata(double mtx[23][23], int i, int m, int n)
 {
 	double temp = *(*mtx+i); // 暂存
@@ -1563,7 +1574,6 @@ void MODEL::movedata(double mtx[23][23], int i, int m, int n)
 	*(*mtx + cur) = temp;
 }
 
-/* 转置，即循环处理所有环 */
 void MODEL::transpose(double mtx[23][23], int m, int n)
 {
 	for (int i = 0; i < m*n; ++i)
@@ -1575,9 +1585,7 @@ void MODEL::transpose(double mtx[23][23], int m, int n)
 			movedata(mtx, i, m, n);
 	}
 }
-/*****************矩阵原地转置E23D********************/
 
-//LUP求逆(将每列b求出的各列x进行组装)
 void MODEL::LUP_solve_inverse(double A[23][23], double inv_A[23][23])
 {
 	//创建矩阵A的副本，注意不能直接用A计算，因为LUP分解算法已将其改变
@@ -1625,6 +1633,122 @@ double MODEL::getNorm(double a[23][23]) {
 			norm = tmp[i];
 	}
 	return norm;
+}
+
+void MODEL::IntegratorDMF(bool updateFlag) {
+	double G, K, f, B = 0, C = 0, D = 0, g = 0, L = 0, depsv, dp = 0, dF =0, zeta;
+	MATRIX r, ds, n, alpha, nF, alphaInit, dAlpha, I(1, 1, 1), dnF;
+	for (int i = 0; i < 9; i++)
+		alpha.matrix[i] = saveParameter.back().at(i + 2);
+	for (int i = 0; i < 9; i++)
+		nF.matrix[i] = saveParameter.back().at(i + 11);
+	for (int i = 0; i < 9; i++)
+		alphaInit.matrix[i] = saveParameter.back().at(i + 20);
+	double p = tr(stress) / 3;
+	double ee = saveParameter.back().at(0);
+	double F = saveParameter.back().at(1);
+	depsv = tr(strainIncrement);
+	MATRIX s = stress - p * I;
+	MATRIX de = strainIncrement - depsv / 3 * I;
+
+	double G0 = internalParameter[1];
+	double v = internalParameter[2];
+	double M = internalParameter[3];
+	double c = internalParameter[4];
+	double lambdaC = internalParameter[5];
+	double e0 = internalParameter[6];
+	double xi = internalParameter[7];
+	double m = internalParameter[8];
+	double h0 = internalParameter[9];
+	double ch = internalParameter[10];
+	double nb = internalParameter[11];
+	double A0 = internalParameter[12];
+	double nd = internalParameter[13];
+	double cF = internalParameter[15];
+	double eA = internalParameter[16];
+
+	G = getG(p, ee);
+	K = getK(G);
+	ds = 2 * G * (strainIncrement - depsv / 3 * I);
+	dp = K * depsv;
+	f = getF(s + ds, alpha, p + dp);
+	MATRIX alphaThetaD, alphaThetaB, RAp, tmp;
+	double cos3Theta, Ad, h, Kp, dL, dee, psi, b0, A;
+	dee = -depsv * (1 + ee);
+
+	if (f < 0) {
+		alphaInit = alpha;
+		stressIncrement = ds + depsv * K * I;
+	}
+	else {
+		for (int i = 0; i < 100; i++) {
+
+			G = getG(p + dp, ee);
+			K = getK(G);
+			r = (s + ds) / (p + dp);
+			n = getN(r, alpha + dAlpha);
+			cos3Theta = getCos3Theta(n);
+			g = getg(cos3Theta);
+			psi = ee + dee - getEc(p + dp);
+			A = (F + dF) * ((nF) % n);
+			zeta = psi - eA * (A - 1);
+			alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * zeta) - m) * n;
+			alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * zeta) - m) * n;
+			Ad = A0;
+			B = getB(cos3Theta, g);
+			C = getC(g);
+			D = getD(n, Ad, alpha + dAlpha, alphaThetaD);
+			b0 = 1e4;
+			if (p > 1e-8)
+				b0 = G0 * (5.05 + 2 * A) * (1 - ch * (ee + dee)) * sqrt(pAtmos / p);
+			double tmp1 = (alpha - alphaInit) % n;
+			if (abs(tmp1) < 1e-8)
+				tmp1 = 1e-8;
+			h = b0 / tmp1;
+			RAp = getRAp(B, C, n);
+			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
+			f = getF(s + ds, alpha + dAlpha, p + dp);
+			if (f < stepLength / 10)
+				break;
+
+			tmp = -2 * G * RAp + D * K * alpha - 2.0 / 3 * p * h * (alphaThetaB - alpha);
+			dL = f / ((tmp % (s + ds - (p + dp) * (alpha + dAlpha))) / sqrt((s + ds - (p + dp) * (alpha + dAlpha)) % (s + ds - (p + dp) * (alpha + dAlpha))) + sqrt(2.0 / 3) * D * K * internalParameter[8]);
+
+			L = L - dL;
+			dp = K * (depsv - relu(L) * D);
+			ds = (strainIncrement - depsv / 3 * I - relu(L) * RAp) * 2 * G;
+			dAlpha = getdAlpha(L, h, alphaThetaB, alpha + dAlpha);
+			if (n % nF > 0)
+				dF = cF * (1 - F) * relu(L);
+			else
+				dF = cF * (-1 - F) * relu(L);
+			//if (F + dF > 1e-6)
+				//dnF = L * cF / (F + dF) * (n - (n % nF) * nF);
+		}
+		alpha = alpha + dAlpha;
+		F = F + dF;
+		nF = nF + dnF;
+		if (F <= 0) {
+			F = 0;
+			nF = n;
+		}
+		stressIncrement = ds + dp * I;
+		ee = ee + dee;
+	}
+
+	vector<double> tmpPara;
+	tmpPara.clear();
+	if (updateFlag) {
+		tmpPara.push_back(ee);
+		tmpPara.push_back(F);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alpha.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(nF.matrix[i]);
+		for (int i = 0; i < 9; i++)
+			tmpPara.push_back(alphaInit.matrix[i]);
+		saveParameter.push_back(tmpPara);
+	}
 }
 
 double MODEL::relu(double x) {

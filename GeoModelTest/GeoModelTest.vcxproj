@@ -126,6 +126,7 @@
     <ClCompile Include="ModelInputParaEB.cpp" />
     <ClCompile Include="ModelParaInputCycliq.cpp" />
     <ClCompile Include="ModelParaInputDM.cpp" />
+    <ClCompile Include="ModelParaInputDMF.cpp" />
     <ClCompile Include="ModelParaInputE.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +134,7 @@
     <QtUic Include="MainWindow.ui" />
     <QtUic Include="ModelParaInputCycliq.ui" />
     <QtUic Include="ModelParaInputDM.ui" />
+    <QtUic Include="ModelParaInputDMF.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="MainWindow.qrc" />
@@ -144,6 +146,7 @@
     <QtMoc Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ModelParaInputDMF.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />
     <QtMoc Include="ModelParaInputCycliq.h" />

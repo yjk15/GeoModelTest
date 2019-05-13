@@ -87,6 +87,8 @@ private:
 	MATRIX getdAlpha(double L, double h, MATRIX alphaThetaB, MATRIX alpha);
 	MATRIX getdz(double depsvp, MATRIX n, MATRIX z);
 
+	void IntegratorDMF(bool);
+
 	void IntegratorEB(bool);
 
 	void IntegratorCycliq(bool);
