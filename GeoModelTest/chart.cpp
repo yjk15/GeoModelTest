@@ -67,11 +67,15 @@ void Chart::setNewChart(){
 	axisX->setGridLineVisible(true); //设置是否显示网格线
 	axisX->setMinorTickCount(4); //设置小刻度线的数目
 	// axisX->setLabelsVisible(false); //设置刻度是否显示
+	if(model->axisX == 5)
+		axisX->setRange(0, 100);
 
 	axisY->setTitleText(getAxisTitle(model->axisY));
 	axisY->setLabelFormat("%g");
 	axisY->setGridLineVisible(true);
 	axisY->setMinorTickCount(4);
+	if (model->axisY == 4)
+		axisY->setRange(-40, 40);
 
 	chart->setAxisX(axisX, series);
 	chart->setAxisY(axisY, series);

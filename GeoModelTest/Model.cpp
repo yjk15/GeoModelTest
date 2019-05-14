@@ -1692,19 +1692,23 @@ void MODEL::IntegratorDMF(bool updateFlag) {
 			psi = ee + dee - getEc(p + dp);
 			A = (F + dF) * ((nF) % n);
 			zeta = psi - eA * (A - 1);
-			alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * zeta) - m) * n;
-			alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * zeta) - m) * n;
+			alphaThetaD = sqrt(2.0 / 3) * (M * exp(nd * zeta) - m) * n;
+			alphaThetaB = sqrt(2.0 / 3) * (M * exp(-nb * zeta) - m) * n;
+			//alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * psi)- m) * n;
+			//alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * psi) - m) * n;
+			//Ad = A0 * (1 + relu(-A));
 			Ad = A0;
 			B = getB(cos3Theta, g);
 			C = getC(g);
 			D = getD(n, Ad, alpha + dAlpha, alphaThetaD);
-			b0 = 1e4;
+			/*b0 = 1e4;
 			if (p > 1e-8)
-				b0 = G0 * (5.05 + 2 * A) * (1 - ch * (ee + dee)) * sqrt(pAtmos / p);
+				b0 = G0 * (5 + 2 * A) * (1 - ch * (ee + dee)) * sqrt(pAtmos / p);
 			double tmp1 = (alpha - alphaInit) % n;
 			if (abs(tmp1) < 1e-8)
 				tmp1 = 1e-8;
-			h = b0 / tmp1;
+			h = b0 / tmp1;*/
+			h = getH(ee + dee, p + dp, alpha + dAlpha, alphaInit, n);
 			RAp = getRAp(B, C, n);
 			Kp = getKp(alphaThetaB, alpha + dAlpha, p + dp, n, h);
 			f = getF(s + ds, alpha + dAlpha, p + dp);
