@@ -6,6 +6,7 @@
 ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 	ui.setupUi(this);
 	setFixedSize(this->width(), this->height());
+	this->setWindowTitle("set DM parameter");
 	input = new QLineEdit[15];
 	method = new QComboBox(this);
 
@@ -29,12 +30,12 @@ ModelParaInputDM::ModelParaInputDM(QWidget *parent) : QDialog(parent) {
 
 	yes->resize(75, 23);
 	yes->move(80, 510);
-	yes->setText("确定");
+	yes->setText("Yes");
 	connect(yes, SIGNAL(clicked()), this, SLOT(clickYes()));
 
 	cancel->resize(75, 23);
 	cancel->move(230, 510);
-	cancel->setText("取消");
+	cancel->setText("Cancel");
 	connect(cancel, SIGNAL(clicked()), this, SLOT(closeDialog()));
 }
 

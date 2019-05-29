@@ -70,7 +70,7 @@ public:
         label_21->setGeometry(QRect(160, 450, 51, 16));
         label_4 = new QLabel(DMF);
         label_4->setObjectName(QString::fromUtf8("label_4"));
-        label_4->setGeometry(QRect(30, 90, 81, 21));
+        label_4->setGeometry(QRect(30, 90, 91, 21));
         label_19 = new QLabel(DMF);
         label_19->setObjectName(QString::fromUtf8("label_19"));
         label_19->setGeometry(QRect(30, 420, 91, 21));
@@ -112,7 +112,7 @@ public:
         label_11->setGeometry(QRect(160, 240, 41, 16));
         label = new QLabel(DMF);
         label->setObjectName(QString::fromUtf8("label"));
-        label->setGeometry(QRect(30, 30, 71, 21));
+        label->setGeometry(QRect(30, 30, 111, 21));
         label->setFont(font);
         label_22 = new QLabel(DMF);
         label_22->setObjectName(QString::fromUtf8("label_22"));
@@ -130,14 +130,14 @@ public:
         label_2->setText(QCoreApplication::translate("DMF", "G_0", nullptr));
         label_5->setText(QCoreApplication::translate("DMF", "M", nullptr));
         label_7->setText(QCoreApplication::translate("DMF", "\316\273c", nullptr));
-        label_16->setText(QCoreApplication::translate("DMF", "\345\211\252\350\203\200\345\270\270\346\225\260", nullptr));
+        label_16->setText(QCoreApplication::translate("DMF", "dilatancy", nullptr));
         label_21->setText(QCoreApplication::translate("DMF", "c_F", nullptr));
-        label_4->setText(QCoreApplication::translate("DMF", "\344\270\264\347\225\214\347\212\266\346\200\201\345\270\270\346\225\260", nullptr));
-        label_19->setText(QCoreApplication::translate("DMF", "\347\273\204\346\236\204\345\274\240\351\207\217", nullptr));
+        label_4->setText(QCoreApplication::translate("DMF", "critical state", nullptr));
+        label_19->setText(QCoreApplication::translate("DMF", "fabric", nullptr));
         label_14->setText(QCoreApplication::translate("DMF", "c_h", nullptr));
-        label_10->setText(QCoreApplication::translate("DMF", "\345\261\210\346\234\215\351\235\242\345\270\270\346\225\260", nullptr));
+        label_10->setText(QCoreApplication::translate("DMF", "yield surface", nullptr));
         label_6->setText(QCoreApplication::translate("DMF", "c", nullptr));
-        label_12->setText(QCoreApplication::translate("DMF", "\345\241\221\346\200\247\346\250\241\351\207\217\345\270\270\346\225\260", nullptr));
+        label_12->setText(QCoreApplication::translate("DMF", "plastic modulus", nullptr));
         label_3->setText(QCoreApplication::translate("DMF", "\316\275", nullptr));
         label_13->setText(QCoreApplication::translate("DMF", "h_0", nullptr));
         label_8->setText(QCoreApplication::translate("DMF", "e_0", nullptr));
@@ -146,7 +146,7 @@ public:
         label_20->setText(QCoreApplication::translate("DMF", "F_{init}", nullptr));
         label_15->setText(QCoreApplication::translate("DMF", "n^b", nullptr));
         label_11->setText(QCoreApplication::translate("DMF", "m", nullptr));
-        label->setText(QCoreApplication::translate("DMF", "\345\274\271\346\200\247\345\270\270\346\225\260", nullptr));
+        label->setText(QCoreApplication::translate("DMF", "elastic modulus", nullptr));
         label_22->setText(QCoreApplication::translate("DMF", "e_A", nullptr));
     } // retranslateUi
 

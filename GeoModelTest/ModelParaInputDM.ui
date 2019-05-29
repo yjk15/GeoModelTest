@@ -23,7 +23,7 @@
     <rect>
      <x>30</x>
      <y>20</y>
-     <width>71</width>
+     <width>111</width>
      <height>21</height>
     </rect>
    </property>
@@ -33,7 +33,7 @@
     </font>
    </property>
    <property name="text">
-    <string>弹性常数</string>
+    <string>elastic modulus</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -72,12 +72,12 @@
     <rect>
      <x>30</x>
      <y>80</y>
-     <width>81</width>
+     <width>101</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>临界状态常数</string>
+    <string>critical state</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_5">
@@ -150,12 +150,12 @@
     <rect>
      <x>30</x>
      <y>230</y>
-     <width>81</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>屈服面常数</string>
+    <string>yield surface</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_11">
@@ -176,12 +176,12 @@
     <rect>
      <x>30</x>
      <y>260</y>
-     <width>91</width>
+     <width>111</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>塑性模量常数</string>
+    <string>plastic modulus</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_13">
@@ -228,12 +228,12 @@
     <rect>
      <x>30</x>
      <y>350</y>
-     <width>54</width>
-     <height>12</height>
+     <width>121</width>
+     <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>剪胀常数</string>
+    <string>dilatancy</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_17">
@@ -267,12 +267,12 @@
     <rect>
      <x>30</x>
      <y>410</y>
-     <width>91</width>
+     <width>111</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>组构-剪胀张量</string>
+    <string>fabric-dilatancy</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_20">
@@ -306,12 +306,12 @@
     <rect>
      <x>30</x>
      <y>470</y>
-     <width>61</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>积分方法</string>
+    <string>integrator</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton">

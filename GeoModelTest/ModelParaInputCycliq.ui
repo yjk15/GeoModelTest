@@ -280,7 +280,7 @@
     </font>
    </property>
    <property name="text">
-    <string>积分方法</string>
+    <string>integrator</string>
    </property>
   </widget>
  </widget>

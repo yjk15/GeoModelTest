@@ -6,7 +6,7 @@ DisplayParameter::DisplayParameter(MODEL *m, QWidget *parent) : QDialog(parent) 
 	//初始化对话框的大小以及设置其名字
 	this->resize(600, 660);
 	setFixedSize(this->width(), this->height());
-	this->setWindowTitle("检查参数");
+	this->setWindowTitle("check parameters");
 
 	Qt::WindowFlags flags = Qt::Dialog;
 	flags |= Qt::WindowCloseButtonHint;
@@ -25,29 +25,29 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	QString tmp;
 
 	label[0].setParent(this);
-	label[0].setText("试验类别");
+	label[0].setText("test type");
 	label[0].move(20, 20);
 	label[0].resize(90, 30);
 
 	label[1].setParent(this);
 	switch (model->testType){
 	case 0:
-		label[1].setText("不排水三轴压缩试验");
+		label[1].setText("undrained triaxial compression");
 		break;
 	case 1:
-		label[1].setText("不排水三轴挤长试验");
+		label[1].setText("undrained triaxial extension");
 		break;
 	case 2:
-		label[1].setText("不排水三轴循环试验");
+		label[1].setText("cyclic undrained triaxial");
 		break;
 	case 3:
-		label[1].setText("排水三轴压缩试验");
+		label[1].setText("drained triaxial compression");
 		break;
 	case 4:
-		label[1].setText("排水三轴挤长试验");
+		label[1].setText("drained triaxial extension");
 		break;
 	case 5:
-		label[1].setText("不排水循环扭剪试验");
+		label[1].setText("undrained cyclic torsional");
 		break;
 	default:
 		break;
@@ -56,7 +56,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	label[1].resize(200, 30);
 
 	labelee[0].setParent(this);
-	labelee[0].setText("模拟开始时孔隙比e");
+	labelee[0].setText("e");
 	labelee[0].move(300, 20);
 	labelee[0].resize(120, 30);
 
@@ -67,23 +67,23 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	labelee[1].resize(90, 30);
 
 	labelee[2].setParent(this);
-	labelee[2].setText("计算步长");
+	labelee[2].setText("step length");
 	labelee[2].move(300, 320);
 	labelee[2].resize(90, 30);
 
 	labelee[3].setParent(this);
 	tmp = QString::number(model->stepLength);
 	labelee[3].setText(tmp);
-	labelee[3].move(350, 320);
+	labelee[3].move(400, 320);
 	labelee[3].resize(90, 30);
 
 	label[2].setParent(this);
-	label[2].setText("初始应力(kPa)");
+	label[2].setText("stress(kPa)");
 	label[2].move(20, 120);
 	label[2].resize(90, 30);
 
 	label[3].setParent(this);
-	label[3].setText("初始应变");
+	label[3].setText("strain");
 	label[3].move(320, 120);
 	label[3].resize(90, 30);
 	
@@ -108,7 +108,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	}
 
 	label[22].setParent(this);
-	label[22].setText("末状态类别");
+	label[22].setText("reversal/ending state");
 	label[22].move(20, 220);
 	label[22].resize(90, 30);
 
@@ -126,13 +126,13 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[24].setText("q");
 		break;
 	case 2:
-		label[24].setText("体应变");
+		label[24].setText("εv");
 		break;
 	case 3:
-		label[24].setText("偏应变");
+		label[24].setText("εq");
 		break;
 	case 4:
-		label[24].setText("步数");
+		label[24].setText("steps");
 		break;
 	default:
 		break;
@@ -148,7 +148,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 
 	if (model->testType == 2 || model->testType == 5 || model->testType == 6) {
 		label[26].setParent(this);
-		label[26].setText("反转次数");
+		label[26].setText("reversal times");
 		label[26].move(20, 270);
 		label[26].resize(60, 30);
 
@@ -160,26 +160,26 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	}
 
 	label[28].setParent(this);
-	label[28].setText("本构模型");
+	label[28].setText("model");
 	label[28].resize(80, 30);
 	label[28].move(20, 320);
 
 	label[29].setParent(this);
 	switch (model->model) {
 	case 0:
-		label[29].setText("线性模型");
+		label[29].setText("linear elastic");
 		break;
 	case 1:
-		label[29].setText("EB模型");
+		label[29].setText("EB");
 		break;
 	case 2:
-		label[29].setText("Dafalias and Manzari模型");
+		label[29].setText("Dafalias and Manzari");
 		break;
 	case 3:
-		label[29].setText("Cycliq模型");
+		label[29].setText("Cycliq");
 		break;
 	case 4:
-		label[29].setText("改进DM模型");
+		label[29].setText("DM with fabric");
 		break;
 	default:
 		break;
@@ -189,7 +189,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 	switch (modelType) {
 	case 0:
 		label[30].setParent(this);
-		label[30].setText("弹性模量");
+		label[30].setText("G");
 		label[30].move(20, 370);
 		label[30].resize(90, 30);
 
@@ -200,7 +200,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[31].resize(90, 30);
 
 		label[32].setParent(this);
-		label[32].setText("泊松比");
+		label[32].setText("ν");
 		label[32].move(20, 420);
 		label[32].resize(90, 30);
 
@@ -433,7 +433,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[59].resize(90, 30);
 
 		label[60].setParent(this);
-		label[60].setText("积分方法");
+		label[60].setText("integrator");
 		label[60].move(20, 620);
 		label[60].resize(90, 30);
 
@@ -603,7 +603,7 @@ void DisplayParameter::DisplayPara(int modelType, int testType) {
 		label[57].resize(90, 30);
 
 		label[60].setParent(this);
-		label[60].setText("积分方法");
+		label[60].setText("integrator");
 		label[60].move(20, 620);
 		label[60].resize(90, 30);
 

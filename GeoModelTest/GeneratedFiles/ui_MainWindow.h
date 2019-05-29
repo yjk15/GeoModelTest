@@ -67,7 +67,7 @@ public:
         label->setFont(font);
         line_3 = new QFrame(centralWidget);
         line_3->setObjectName(QString::fromUtf8("line_3"));
-        line_3->setGeometry(QRect(110, 100, 381, 21));
+        line_3->setGeometry(QRect(100, 100, 391, 21));
         line_3->setFrameShape(QFrame::HLine);
         line_3->setFrameShadow(QFrame::Sunken);
         line_4 = new QFrame(centralWidget);
@@ -81,7 +81,7 @@ public:
         label_2->setFont(font);
         line_7 = new QFrame(centralWidget);
         line_7->setObjectName(QString::fromUtf8("line_7"));
-        line_7->setGeometry(QRect(90, 200, 401, 21));
+        line_7->setGeometry(QRect(120, 200, 371, 21));
         line_7->setFrameShape(QFrame::HLine);
         line_7->setFrameShadow(QFrame::Sunken);
         line_8 = new QFrame(centralWidget);
@@ -91,7 +91,7 @@ public:
         line_8->setFrameShadow(QFrame::Sunken);
         label_4 = new QLabel(centralWidget);
         label_4->setObjectName(QString::fromUtf8("label_4"));
-        label_4->setGeometry(QRect(50, 200, 61, 21));
+        label_4->setGeometry(QRect(50, 200, 71, 21));
         label_4->setFont(font);
         line_9 = new QFrame(centralWidget);
         line_9->setObjectName(QString::fromUtf8("line_9"));
@@ -139,10 +139,10 @@ public:
     void retranslateUi(QMainWindow *MainWindowClass)
     {
         MainWindowClass->setWindowTitle(QCoreApplication::translate("MainWindowClass", "MainWindow", nullptr));
-        label->setText(QCoreApplication::translate("MainWindowClass", "\350\257\225\351\252\214\347\261\273\345\236\213", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindowClass", "\346\234\254\346\236\204\346\250\241\345\236\213", nullptr));
-        label_4->setText(QCoreApplication::translate("MainWindowClass", "\350\256\241\347\256\227", nullptr));
-        label_5->setText(QCoreApplication::translate("MainWindowClass", "\347\273\230\345\233\276", nullptr));
+        label->setText(QCoreApplication::translate("MainWindowClass", "test type", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindowClass", "model", nullptr));
+        label_4->setText(QCoreApplication::translate("MainWindowClass", "calculation", nullptr));
+        label_5->setText(QCoreApplication::translate("MainWindowClass", "figure", nullptr));
     } // retranslateUi
 
 };

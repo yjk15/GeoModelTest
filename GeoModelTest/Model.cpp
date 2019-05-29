@@ -78,8 +78,47 @@ void MODEL::Simulate() {
 		saveParameter.push_back(tmpPara);
 	}
 	else if (model == 4) {
-		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, nF;
-		nF(0, 0) = -1 / sqrt(6); nF(1, 1) = -1 / sqrt(6); nF(2, 2) = 2 / sqrt(6);
+		MATRIX I(1, 1, 1), alpha = (stress - tr(stress) / 3 * I) / (tr(stress) / 3), alphaInit = alpha, nF, n;
+		int theta = internalParameter[17];
+		double tmp, x;
+		switch (theta)
+		{
+		case 0:
+			nF(0, 0) = -1 / sqrt(6); nF(1, 1) = -1 / sqrt(6); nF(2, 2) = 2 / sqrt(6);
+			break;
+		case 15:
+			nF(0, 0) = -1 / sqrt(6);
+			nF(1, 1) = (2 - 3 * sqrt(3)) / 4 / sqrt(6); nF(1, 2) = -3.0 / 4 / sqrt(6);
+			nF(2, 1) = -3.0 / 4 / sqrt(6); nF(2, 2) = (2 + 3 * sqrt(3)) / 4 / sqrt(6);
+			break;
+		case 30:
+			nF(0, 0) = -1 / sqrt(6);
+			nF(1, 1) = -1.0 / 4 / sqrt(6); nF(1, 2) = -3.0 / 4 / sqrt(2);
+			nF(2, 1) = -3.0 / 4 / sqrt(2); nF(2, 2) = 5.0 / 4 / sqrt(6);
+			break;
+		case 45:
+			nF(0, 0) = -1 / sqrt(6); 
+			nF(1, 1) = 1 / 2.0 / sqrt(6); nF(1, 2) = -3 / 2.0 / sqrt(6);
+			nF(2, 1) = -3 / 2.0 / sqrt(6); nF(2, 2) = 1 / 2.0 / sqrt(6);
+			break;
+		case 60:
+			nF(0, 0) = 1 / sqrt(6);
+			nF(1, 1) = 1.0 / 4 / sqrt(6); nF(1, 2) = -3.0 / 4 / sqrt(2);
+			nF(2, 1) = -3.0 / 4 / sqrt(2); nF(2, 2) = -5.0 / 4 / sqrt(6);
+			break;
+		case 75:
+			nF(0, 0) = 1 / sqrt(6);
+			nF(1, 1) = (-2 + 3 * sqrt(3)) / 4 / sqrt(6); nF(1, 2) = -3.0 / 4 / sqrt(6);
+			nF(2, 1) = -3.0 / 4 / sqrt(6); nF(2, 2) = (-2 - 3 * sqrt(3)) / 4 / sqrt(6);
+			break;
+		case 90:
+			nF(0, 0) = 1 / sqrt(6); nF(1, 1) = 1 / sqrt(6); nF(2, 2) = -2 / sqrt(6);
+			break;
+		default:
+			break;
+		} 
+			
+		//nF(2, 0) = sqrt(2) / 2; nF(0, 2) = sqrt(2) / 2;
 		vector<double> tmpPara;
 		tmpPara.push_back(ee);
 		tmpPara.push_back(internalParameter[14]);
@@ -252,8 +291,8 @@ bool MODEL::isEndingPoint() {
 				return false;
 
 		case 1:
-			q = stress(0, 0) - stress(2, 2);
-			if (abs(abs(q) - abs(endAndReversalPoint)) < 0.3) {
+			q = stress(2, 2) - stress(0, 0);
+			if (abs(q - endAndReversalPoint) < 0.3) {
 				return true;
 			}
 			else
@@ -267,7 +306,7 @@ bool MODEL::isEndingPoint() {
 
 		case 3:
 			epsilonq = (strain(2, 2) - strain(0, 0)) * 2.0 / 3;
-			if (abs(abs(epsilonq) - abs(endAndReversalPoint)) < 1e-6)
+			if (abs(abs(epsilonq) - abs(endAndReversalPoint)) <= stepLength)
 				return true;
 			return false;
 
@@ -410,9 +449,9 @@ void MODEL::IntegratorDMExplicit(bool updateFlag) {
 	}
 	else {
 		rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
-		rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
-		rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
-		rk44 = RK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, z + rk43.dz, strain, alphaInit);
+		rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain + strainIncrement/2, alphaInit);
+		rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain + strainIncrement / 2, alphaInit);
+		rk44 = RK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, z + rk43.dz, strain + strainIncrement, alphaInit);
 		stressIncrement = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
 		alpha = alpha + (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
 		z = z + (rk41.dz + rk42.dz * 2 + rk43.dz * 2 + rk44.dz) / 6;
@@ -889,7 +928,7 @@ void MODEL::IntegratorDMCPPM2(bool updateFlag) {
 		stressIncrement = ds + depsv * K * I;
 	}
 	else {
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 100; i++) {
 			if (p + dp < 0.5)
 				break;
 			G = getG(p + dp, ee + dee);
@@ -923,7 +962,7 @@ void MODEL::IntegratorDMCPPM2(bool updateFlag) {
 				R[9] = tmp(0, 1);
 				R[10] = tmp(0, 2);
 				R[11] = tmp(1, 2);
-				tmp = dAlpha - 2.0 / 3 * L * h * (alphaThetaB - alpha);
+				tmp = dAlpha - 2.0 / 3 * L * h * (alphaThetaB - alphaN);
 				R[12] = tmp(0, 0);
 				R[13] = tmp(1, 1);
 				R[14] = tmp(0, 1);
@@ -942,13 +981,6 @@ void MODEL::IntegratorDMCPPM2(bool updateFlag) {
 			for (int j = 0; j < 23; j++)
 				RLength += R[j] * R[j];
 			RLength = sqrt(RLength);
-			if (i == 0)
-				RLength0 = RLength;
-			else if (i > 1) {
-				if (RLength0 < RLength)
-					break;
-			}
-			RLength0 = RLength;
 			if (RLength < stepLength)
 				break;
 
@@ -1358,7 +1390,7 @@ void MODEL::IntegratorDMCPPM2(bool updateFlag) {
 			dL = -U[22]; L = L + dL;
 		}
 
-		if (p + dp < 0.5 || RLength0 < RLength) {
+		if (p + dp < 0.5 || RLength > stepLength) {
 			rk41 = RK4(stress, alpha, ee, z, strain, alphaInit);
 			rk42 = RK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, z + rk41.dz / 2, strain, alphaInit);
 			rk43 = RK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, z + rk42.dz / 2, strain, alphaInit);
@@ -1413,38 +1445,43 @@ double MODEL::Guass(double a[23][23], double b[23], double x[23]) {
 	double cond = 0;
 	//cond = getNorm(a) * getNorm(aInverse);
 	
-	int i, j, k, n = 23;
-	double c[23];    //存储初等行变换的系数，用于行的相减
-	//消元的整个过程如下，总共n-1次消元过程。
-	for (k = 0; k < n - 1; k++)
-	{
-		//求出第K次初等行变换的系数
-		for (i = k + 1; i < n; i++)
-			c[i] = a[i][k] / a[k][k];
+	//int i, j, k, n = 23;
+	//double c[23];    //存储初等行变换的系数，用于行的相减
+	////消元的整个过程如下，总共n-1次消元过程。
+	//for (k = 0; k < n - 1; k++)
+	//{
+	//	//求出第K次初等行变换的系数
+	//	for (i = k + 1; i < n; i++)
+	//		c[i] = a[i][k] / a[k][k];
 
-		//第K次的消元计算
-		for (i = k + 1; i < n; i++)
-		{
-			for (j = 0; j < n; j++)
-			{
-				a[i][j] = a[i][j] - c[i] * a[k][j];
-			}
-			b[i] = b[i] - c[i] * b[k];
-		}
-	}
+	//	//第K次的消元计算
+	//	for (i = k + 1; i < n; i++)
+	//	{
+	//		for (j = 0; j < n; j++)
+	//		{
+	//			a[i][j] = a[i][j] - c[i] * a[k][j];
+	//		}
+	//		b[i] = b[i] - c[i] * b[k];
+	//	}
+	//}
 
-	//先计算出最后一个未知数；
-	x[n-1] = b[n-1] / a[n-1][n-1];
-	//求出每个未知数的值
-	for (i = n-2; i >= 0; i--)
-	{
-		double sum = 0;
-		for (j = i + 1; j < n; j++)
-		{
-			sum += a[i][j] * x[j];
-		}
-		x[i] = (b[i] - sum) / a[i][i];
-	}
+	////先计算出最后一个未知数；
+	//x[n-1] = b[n-1] / a[n-1][n-1];
+	////求出每个未知数的值
+	//for (i = n-2; i >= 0; i--)
+	//{
+	//	double sum = 0;
+	//	for (j = i + 1; j < n; j++)
+	//	{
+	//		sum += a[i][j] * x[j];
+	//	}
+	//	x[i] = (b[i] - sum) / a[i][i];
+	//}
+
+	double L[23][23], U[23][23];
+	int P[23];
+	LUP_Descomposition(a, L, U, P);
+	LUP_Solve(L, U, P, b, x);
 
 	return cond;
 }
@@ -1602,9 +1639,9 @@ void MODEL::LUP_solve_inverse(double A[23][23], double inv_A[23][23])
 		int P[23]{};
 
 		//构造单位阵的每一列
-		for (int i = 0; i < 23; i++)
+		for (int h = 0; h < 23; h++)
 		{
-			b[i] = 0;
+			b[h] = 0;
 		}
 		b[i] = 1;
 
@@ -1692,12 +1729,12 @@ void MODEL::IntegratorDMF(bool updateFlag) {
 			psi = ee + dee - getEc(p + dp);
 			A = (F + dF) * ((nF) % n);
 			zeta = psi - eA * (A - 1);
-			alphaThetaD = sqrt(2.0 / 3) * (M * exp(nd * zeta) - m) * n;
-			alphaThetaB = sqrt(2.0 / 3) * (M * exp(-nb * zeta) - m) * n;
+			alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * zeta) - m) * n;
+			alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * zeta) - m) * n;
 			//alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * psi)- m) * n;
 			//alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * psi) - m) * n;
-			//Ad = A0 * (1 + relu(-A));
-			Ad = A0;
+			Ad = A0 * (1 + relu(-A));
+			//Ad = A0;
 			B = getB(cos3Theta, g);
 			C = getC(g);
 			D = getD(n, Ad, alpha + dAlpha, alphaThetaD);
@@ -1726,12 +1763,24 @@ void MODEL::IntegratorDMF(bool updateFlag) {
 				dF = cF * (1 - F) * relu(L);
 			else
 				dF = cF * (-1 - F) * relu(L);
-			//if (F + dF > 1e-6)
-				//dnF = L * cF / (F + dF) * (n - (n % nF) * nF);
+			/*if (F + dF > 1e-8)
+				dnF = L * cF / (F + dF) * (n - (n % nF) * nF);*/
+		}
+		if (p + dp < 0.5) {
+			RK4Class rk41 = DMFRK4(stress, alpha, ee, nF, strain, alphaInit, F);
+			RK4Class rk42 = DMFRK4(stress + rk41.ds / 2, alpha + rk41.dAlpha / 2, ee + rk41.dee, nF, strain, alphaInit, F + rk41.dF / 2);
+			RK4Class rk43 = DMFRK4(stress + rk42.ds / 2, alpha + rk42.dAlpha / 2, ee + rk42.dee, nF, strain, alphaInit, F + rk42.dF / 2);
+			RK4Class rk44 = DMFRK4(stress + rk43.ds, alpha + rk43.dAlpha, ee + rk43.dee, nF, strain, alphaInit, F + rk43.dF);
+			MATRIX dSigma = (rk41.ds + rk42.ds * 2 + rk43.ds * 2 + rk44.ds) / 6;
+			dp = tr(dSigma) / 3;
+			ds = dSigma - dp * I;
+			dAlpha = (rk41.dAlpha + rk42.dAlpha * 2 + rk43.dAlpha * 2 + rk44.dAlpha) / 6;
+			dF = (rk41.dF + rk42.dF * 2 + rk43.dF * 2 + rk44.dF) / 6;
+			dee = (rk41.dee + rk42.dee * 2 + rk43.dee * 2 + rk44.dee) / 6;
 		}
 		alpha = alpha + dAlpha;
 		F = F + dF;
-		nF = nF + dnF;
+		//nF = nF + dnF;
 		if (F <= 0) {
 			F = 0;
 			nF = n;
@@ -1753,6 +1802,57 @@ void MODEL::IntegratorDMF(bool updateFlag) {
 			tmpPara.push_back(alphaInit.matrix[i]);
 		saveParameter.push_back(tmpPara);
 	}
+}
+
+MODEL::RK4Class MODEL::DMFRK4(MATRIX stress, MATRIX alpha, double ee, MATRIX nF, MATRIX srtain, MATRIX alphaInit, double F) {
+	double M = internalParameter[3];
+	double m = internalParameter[8];
+	double nb = internalParameter[11];
+	double A0 = internalParameter[12];
+	double nd = internalParameter[13];
+	double cF = internalParameter[15];
+	double eA = internalParameter[16];
+
+	MATRIX I(1, 1, 1);
+	double p = tr(stress) / 3;
+	double G = getG(p, ee);
+	double K = getK(G);
+	MATRIX s = stress - p * I;
+	MATRIX r = s / p;
+	MATRIX n = getN(r, alpha);
+	double cos3Theta = getCos3Theta(n);
+	double g = getg(cos3Theta);
+	double psi = ee - getEc(p);
+	double A = F * ((nF) % n);
+	double zeta = psi - eA * (A - 1);
+	MATRIX alphaThetaD = sqrt(2.0 / 3) * (g * M * exp(nd * zeta) - m) * n;
+	MATRIX alphaThetaB = sqrt(2.0 / 3) * (g * M * exp(-nb * zeta) - m) * n;
+	double Ad = A0 * (1 + relu(-A));
+	double B = getB(cos3Theta, g);
+	double C = getC(g);
+	double D = getD(n, Ad, alpha, alphaThetaD);
+	double h = getH(ee, p, alpha, alphaInit, n);
+	double Kp = getKp(alphaThetaB, alpha, p, n, h);
+	double depsv = tr(strainIncrement);
+	MATRIX de = strainIncrement - depsv / 3 * I;
+	double L = getL(n, G, r, de, depsv, Kp, B, C, K, D);
+	MATRIX RAp = getRAp(B, C, n);
+
+	MATRIX ds = getdSigma(G, de, K, depsv, L, RAp, D);
+	MATRIX dAlpha = getdAlpha(L, h, alphaThetaB, alpha);
+	double dF = 0;
+	if (n % nF > 0)
+		dF = cF * (1 - F) * relu(L);
+	else
+		dF = cF * (-1 - F) * relu(L);
+	double dee = -depsv * (1 + ee);
+
+	MODEL::RK4Class result;
+	result.dAlpha = dAlpha;
+	result.dF = dF;
+	result.ds = ds;
+	result.dee = dee;
+	return result;
 }
 
 double MODEL::relu(double x) {

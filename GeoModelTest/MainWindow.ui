@@ -56,15 +56,15 @@
      </font>
     </property>
     <property name="text">
-     <string>试验类型</string>
+     <string>test type</string>
     </property>
    </widget>
    <widget class="Line" name="line_3">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>100</x>
       <y>100</y>
-      <width>381</width>
+      <width>391</width>
       <height>21</height>
      </rect>
     </property>
@@ -101,15 +101,15 @@
      </font>
     </property>
     <property name="text">
-     <string>本构模型</string>
+     <string>model</string>
     </property>
    </widget>
    <widget class="Line" name="line_7">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>120</x>
       <y>200</y>
-      <width>401</width>
+      <width>371</width>
       <height>21</height>
      </rect>
     </property>
@@ -135,7 +135,7 @@
      <rect>
       <x>50</x>
       <y>200</y>
-      <width>61</width>
+      <width>71</width>
       <height>21</height>
      </rect>
     </property>
@@ -146,7 +146,7 @@
      </font>
     </property>
     <property name="text">
-     <string>计算</string>
+     <string>calculation</string>
     </property>
    </widget>
    <widget class="Line" name="line_9">
@@ -178,7 +178,7 @@
      </font>
     </property>
     <property name="text">
-     <string>绘图</string>
+     <string>figure</string>
     </property>
    </widget>
    <widget class="Line" name="line_10">

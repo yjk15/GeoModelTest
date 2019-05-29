@@ -5,7 +5,7 @@
 ModelParaInputEB::ModelParaInputEB(QWidget *parent) : QDialog(parent) {
 	this->resize(240, 330);
 	setFixedSize(this->width(), this->height());
-	this->setWindowTitle("设置EB模型参数");
+	this->setWindowTitle("set EB parameter");
 
 	Qt::WindowFlags flags = Qt::Dialog;
 	flags |= Qt::WindowCloseButtonHint;
@@ -57,13 +57,13 @@ ModelParaInputEB::ModelParaInputEB(QWidget *parent) : QDialog(parent) {
 	inputEB4->resize(90, 30);
 
 	yes = new QPushButton(this);
-	yes->setText("确定");
+	yes->setText("Yes");
 	yes->move(50, 270);
 	yes->resize(60, 30);
 	connect(yes, SIGNAL(clicked()), this, SLOT(clickYes()));
 
 	cancel = new QPushButton(this);
-	cancel->setText("取消");
+	cancel->setText("Cancel");
 	cancel->move(150, 270);
 	cancel->resize(60, 30);
 	connect(cancel, SIGNAL(clicked()), this, SLOT(closeDialog()));

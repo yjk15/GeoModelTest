@@ -3,7 +3,7 @@
 #pragma execution_character_set("utf-8")    // 解决汉字乱码问题，注意！！！
 
 EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
-	this->setWindowTitle("设置末状态");
+	this->setWindowTitle("setting reversal state");
 	this->resize(330, 200);
 	setFixedSize(this->width(), this->height());
 
@@ -12,7 +12,7 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	setWindowFlags(flags);
 
 	labelType = new QLabel(this);
-	labelType->setText("选择末状态类别");
+	labelType->setText("reversal state");
 	labelType->move(20, 20);
 	labelType->resize(90, 30);
 
@@ -24,8 +24,8 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	inputType = new QComboBox(this);
 	inputType->addItem("p");
 	inputType->addItem("q");
-	inputType->addItem("体应变");
-	inputType->addItem("偏应变");
+	inputType->addItem("εv");
+	inputType->addItem("εq");
 	inputType->resize(80, 30);
 	inputType->move(120, 20);
 
@@ -34,7 +34,7 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	inputPoint->move(230, 20);
 
 	labelLoop = new QLabel(this);
-	labelLoop->setText("反转次数");
+	labelLoop->setText("reversal times");
 	labelLoop->move(20, 90);
 	labelLoop->resize(60, 30);
 
@@ -44,13 +44,13 @@ EndAndReversalState::EndAndReversalState(QWidget *parent) : QDialog(parent) {
 	inputLoop->move(120, 90);
 
 	yes = new QPushButton(this);
-	yes->setText("确定");
+	yes->setText("Yes");
 	yes->move(70, 150);
 	yes->resize(60, 30);
 	connect(yes, SIGNAL(clicked()), this, SLOT(clickYes()));
 
 	cancel = new QPushButton(this);
-	cancel->setText("取消");
+	cancel->setText("Cancel");
 	cancel->move(170, 150);
 	cancel->resize(60, 30);
 	connect(cancel, SIGNAL(clicked()), this, SLOT(clickCancel()));

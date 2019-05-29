@@ -5,14 +5,14 @@
 InitState::InitState(QWidget *parent) : QDialog(parent) {
 	this->resize(600, 280);
 	setFixedSize(this->width(), this->height());
-	this->setWindowTitle("设置初始应力应变");
+	this->setWindowTitle("set initial state");
 
 	Qt::WindowFlags flags = Qt::Dialog;
 	flags |= Qt::WindowCloseButtonHint;
 	setWindowFlags(flags);
 
 	labelE = new QLabel(this);
-	labelE->setText("模拟开始时的孔隙比e");
+	labelE->setText("e");
 	labelE->move(20, 20);
 	labelE->resize(130, 30);
 
@@ -22,12 +22,12 @@ InitState::InitState(QWidget *parent) : QDialog(parent) {
 	inputE->move(180, 20);
 
 	labelStress = new QLabel(this);
-	labelStress->setText("初始应力(kPa)");
+	labelStress->setText("stress(kPa)");
 	labelStress->move(20, 70);
 	labelStress->resize(90, 30);
 
 	labelStrain = new QLabel(this);
-	labelStrain->setText("初始应变");
+	labelStrain->setText("strain");
 	labelStrain->move(320, 70);
 	labelStrain->resize(90, 30);
 
@@ -50,13 +50,13 @@ InitState::InitState(QWidget *parent) : QDialog(parent) {
 	}
 
 	yes = new QPushButton(this);
-	yes->setText("确定");
+	yes->setText("Yes");
 	yes->move(220, 230);
 	yes->resize(60, 30);
 	connect(yes, SIGNAL(clicked()), this, SLOT(clickYes()));
 
 	cancel = new QPushButton(this);
-	cancel->setText("取消");
+	cancel->setText("Cancel");
 	cancel->move(320, 230);
 	cancel->resize(60, 30);
 	connect(cancel, SIGNAL(clicked()), this, SLOT(clickCancel()));

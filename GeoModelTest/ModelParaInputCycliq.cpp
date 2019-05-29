@@ -6,7 +6,7 @@
 ModelParaInputCycliq::ModelParaInputCycliq(QWidget *parent) : QDialog(parent) {
 	ui.setupUi(this);
 	setFixedSize(this->width(), this->height());
-	this->setWindowTitle("设置Cycliq模型参数");
+	this->setWindowTitle("set Cycliq parameter");
 	input = new QLineEdit[14];
 	method = new QComboBox(this);
 
@@ -29,12 +29,12 @@ ModelParaInputCycliq::ModelParaInputCycliq(QWidget *parent) : QDialog(parent) {
 
 	yes->resize(75, 23);
 	yes->move(40, 480);
-	yes->setText("确定");
+	yes->setText("Yes");
 	connect(yes, SIGNAL(clicked()), this, SLOT(clickYes()));
 
 	cancel->resize(75, 23);
 	cancel->move(140, 480);
-	cancel->setText("取消");
+	cancel->setText("Cancel");
 	connect(cancel, SIGNAL(clicked()), this, SLOT(closeDialog()));
 }
 

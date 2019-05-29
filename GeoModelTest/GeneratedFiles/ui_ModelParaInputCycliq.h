@@ -125,7 +125,7 @@ public:
         label_13->setText(QCoreApplication::translate("DialogCycliq", "\316\273_c", nullptr));
         label_15->setText(QCoreApplication::translate("DialogCycliq", "e_0", nullptr));
         label->setText(QCoreApplication::translate("DialogCycliq", "\316\276", nullptr));
-        label_14->setText(QCoreApplication::translate("DialogCycliq", "\347\247\257\345\210\206\346\226\271\346\263\225", nullptr));
+        label_14->setText(QCoreApplication::translate("DialogCycliq", "integrator", nullptr));
     } // retranslateUi
 
 };

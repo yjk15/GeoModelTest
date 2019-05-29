@@ -25,16 +25,16 @@ Chart::Chart(MODEL *m, QWidget *parent)
 	chart->legend()->hide();
 	axisX = new QValueAxis; //定义X轴
 	axisX->setLabelFormat("%g"); //设置刻度的格式
-	axisX->setTitleText("X Axis"); //设置X轴的标题
-	axisX->setGridLineVisible(true); //设置是否显示网格线
-	axisX->setMinorTickCount(4); //设置小刻度线的数目
+	axisX->setTitleText(getAxisTitle(model->axisX)); //设置X轴的标题
+	axisX->setGridLineVisible(false); //设置是否显示网格线
+	//axisX->setMinorTickCount(4); //设置小刻度线的数目
    // axisX->setLabelsVisible(false); //设置刻度是否显示
 
 	axisY = new QValueAxis;
-	axisY->setTitleText("Y Axis");
+	axisY->setTitleText(getAxisTitle(model->axisY));
 	axisY->setLabelFormat("%g");
-	axisY->setGridLineVisible(true);
-	axisY->setMinorTickCount(4); //设置小刻度线的数目
+	axisY->setGridLineVisible(false);
+	//axisY->setMinorTickCount(4); //设置小刻度线的数目
 
 	chart->setAxisX(axisX, series);
 	chart->setAxisY(axisY, series);
@@ -50,6 +50,8 @@ Chart::~Chart() {
 void Chart::setNewChart(){
 	delete series, chart, axisX, axisY, widget;
 
+	double minX, maxX, minY, maxY;
+
 	widget = new QChartView(this);
 	widget->setGeometry(QRect(0, 0, 600, 400));
 	chart = new QChart();
@@ -57,25 +59,74 @@ void Chart::setNewChart(){
 	axisX = new QValueAxis(this); //定义X轴
 	axisY = new QValueAxis(this);
 
-	for (int i = 0; i < model->stressPath->size(); i++)
+	minX = getAxis(model->axisX, 0);
+	maxX = getAxis(model->axisX, 0);
+	minY = getAxis(model->axisY, 0);
+	maxY = getAxis(model->axisY, 0);
+	for (int i = 0; i < model->stressPath->size(); i++) {
 		series->append(getAxis(model->axisX, i), getAxis(model->axisY, i));
+		//if (getAxis(model->axisX, i) < minX)
+		//	minX = getAxis(model->axisX, i);
+		//if (getAxis(model->axisX, i) > maxX)
+		//	maxX = getAxis(model->axisX, i);
+		//if (getAxis(model->axisY, i) < minY)
+		//	minY = getAxis(model->axisY, i);
+		//if (getAxis(model->axisY, i) > maxY)
+		//	maxY = getAxis(model->axisY, i);
+	}
+
+	/*int E1 = 0;
+	while (abs(minX) < 100) {
+		minX *= 10;
+		E1 += 1;
+	}
+	minX = minX / pow(10, E1);
+	double E2 = 0;
+	while (abs(maxX) < 100) {
+		maxX *= 10;
+		E2 += 1;
+	}
+	maxX = maxX / pow(10, E2);
+	if (E2 < E1)
+		E1 = E2;
+	minX = double(int(minX * pow(10, E1) / 5) * 5) / pow(10, E1);
+	maxX = double(int(maxX * pow(10, E1) / 5) * 5) / pow(10, E1);
+
+	E1 = 0;
+	while (abs(minY) < 100) {
+		minY *= 10;
+		E1 += 1;
+	}
+	minY = minY / pow(10, E1);
+	E2 = 0;
+	while (abs(maxY) < 100) {
+		maxY *= 10;
+		E2 += 1;
+	}
+	maxY = maxY / pow(10, E2);
+	if (E2 < E1)
+		E1 = E2;
+	minY = double(int(minY * pow(10, E1) / 5) * 5) / pow(10, E1);
+	maxY = double(int(maxY * pow(10, E1) / 5) * 5) / pow(10, E1);*/
 
 	chart->addSeries(series);
 	chart->legend()->hide();
 	axisX->setLabelFormat("%g"); //设置刻度的格式
 	axisX->setTitleText(getAxisTitle(model->axisX)); //设置X轴的标题
 	axisX->setGridLineVisible(true); //设置是否显示网格线
-	axisX->setMinorTickCount(4); //设置小刻度线的数目
+	//axisX->setMinorTickCount(4); //设置小刻度线的数目
 	// axisX->setLabelsVisible(false); //设置刻度是否显示
-	if(model->axisX == 5)
-		axisX->setRange(0, 100);
+	/*if(model->axisX == 5)
+		axisX->setRange(0, 100);*/
+	//axisX->setRange(minX, maxX);
 
 	axisY->setTitleText(getAxisTitle(model->axisY));
 	axisY->setLabelFormat("%g");
 	axisY->setGridLineVisible(true);
-	axisY->setMinorTickCount(4);
-	if (model->axisY == 4)
-		axisY->setRange(-40, 40);
+	//axisY->setMinorTickCount(4);
+	/*if (model->axisY == 4)
+		axisY->setRange(-40, 40);*/
+	//axisY->setRange(minY, maxY);
 
 	chart->setAxisX(axisX, series);
 	chart->setAxisY(axisY, series);

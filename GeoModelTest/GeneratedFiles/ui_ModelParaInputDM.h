@@ -55,7 +55,7 @@ public:
         Dialog->setFont(font);
         label = new QLabel(Dialog);
         label->setObjectName(QString::fromUtf8("label"));
-        label->setGeometry(QRect(30, 20, 71, 21));
+        label->setGeometry(QRect(30, 20, 111, 21));
         label->setFont(font);
         label_2 = new QLabel(Dialog);
         label_2->setObjectName(QString::fromUtf8("label_2"));
@@ -66,7 +66,7 @@ public:
         label_3->setGeometry(QRect(160, 50, 51, 16));
         label_4 = new QLabel(Dialog);
         label_4->setObjectName(QString::fromUtf8("label_4"));
-        label_4->setGeometry(QRect(30, 80, 81, 21));
+        label_4->setGeometry(QRect(30, 80, 101, 21));
         label_5 = new QLabel(Dialog);
         label_5->setObjectName(QString::fromUtf8("label_5"));
         label_5->setGeometry(QRect(160, 80, 54, 12));
@@ -84,13 +84,13 @@ public:
         label_9->setGeometry(QRect(160, 200, 54, 12));
         label_10 = new QLabel(Dialog);
         label_10->setObjectName(QString::fromUtf8("label_10"));
-        label_10->setGeometry(QRect(30, 230, 81, 21));
+        label_10->setGeometry(QRect(30, 230, 91, 21));
         label_11 = new QLabel(Dialog);
         label_11->setObjectName(QString::fromUtf8("label_11"));
         label_11->setGeometry(QRect(160, 230, 41, 16));
         label_12 = new QLabel(Dialog);
         label_12->setObjectName(QString::fromUtf8("label_12"));
-        label_12->setGeometry(QRect(30, 260, 91, 21));
+        label_12->setGeometry(QRect(30, 260, 111, 21));
         label_13 = new QLabel(Dialog);
         label_13->setObjectName(QString::fromUtf8("label_13"));
         label_13->setGeometry(QRect(160, 260, 51, 21));
@@ -102,7 +102,7 @@ public:
         label_15->setGeometry(QRect(160, 320, 54, 12));
         label_16 = new QLabel(Dialog);
         label_16->setObjectName(QString::fromUtf8("label_16"));
-        label_16->setGeometry(QRect(30, 350, 54, 12));
+        label_16->setGeometry(QRect(30, 350, 121, 16));
         label_17 = new QLabel(Dialog);
         label_17->setObjectName(QString::fromUtf8("label_17"));
         label_17->setGeometry(QRect(160, 350, 51, 16));
@@ -111,7 +111,7 @@ public:
         label_18->setGeometry(QRect(160, 380, 54, 12));
         label_19 = new QLabel(Dialog);
         label_19->setObjectName(QString::fromUtf8("label_19"));
-        label_19->setGeometry(QRect(30, 410, 91, 21));
+        label_19->setGeometry(QRect(30, 410, 111, 21));
         label_20 = new QLabel(Dialog);
         label_20->setObjectName(QString::fromUtf8("label_20"));
         label_20->setGeometry(QRect(160, 410, 51, 21));
@@ -120,7 +120,7 @@ public:
         label_21->setGeometry(QRect(160, 440, 51, 16));
         label_22 = new QLabel(Dialog);
         label_22->setObjectName(QString::fromUtf8("label_22"));
-        label_22->setGeometry(QRect(30, 470, 61, 21));
+        label_22->setGeometry(QRect(30, 470, 91, 21));
         pushButton = new QPushButton(Dialog);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
         pushButton->setGeometry(QRect(80, 510, 75, 23));
@@ -136,28 +136,28 @@ public:
     void retranslateUi(QDialog *Dialog)
     {
         Dialog->setWindowTitle(QCoreApplication::translate("Dialog", "\350\256\276\347\275\256DM\346\250\241\345\236\213\345\217\202\346\225\260", nullptr));
-        label->setText(QCoreApplication::translate("Dialog", "\345\274\271\346\200\247\345\270\270\346\225\260", nullptr));
+        label->setText(QCoreApplication::translate("Dialog", "elastic modulus", nullptr));
         label_2->setText(QCoreApplication::translate("Dialog", "G_0", nullptr));
         label_3->setText(QCoreApplication::translate("Dialog", "\316\275", nullptr));
-        label_4->setText(QCoreApplication::translate("Dialog", "\344\270\264\347\225\214\347\212\266\346\200\201\345\270\270\346\225\260", nullptr));
+        label_4->setText(QCoreApplication::translate("Dialog", "critical state", nullptr));
         label_5->setText(QCoreApplication::translate("Dialog", "M", nullptr));
         label_6->setText(QCoreApplication::translate("Dialog", "c", nullptr));
         label_7->setText(QCoreApplication::translate("Dialog", "\316\273c", nullptr));
         label_8->setText(QCoreApplication::translate("Dialog", "e_0", nullptr));
         label_9->setText(QCoreApplication::translate("Dialog", "\316\276", nullptr));
-        label_10->setText(QCoreApplication::translate("Dialog", "\345\261\210\346\234\215\351\235\242\345\270\270\346\225\260", nullptr));
+        label_10->setText(QCoreApplication::translate("Dialog", "yield surface", nullptr));
         label_11->setText(QCoreApplication::translate("Dialog", "m", nullptr));
-        label_12->setText(QCoreApplication::translate("Dialog", "\345\241\221\346\200\247\346\250\241\351\207\217\345\270\270\346\225\260", nullptr));
+        label_12->setText(QCoreApplication::translate("Dialog", "plastic modulus", nullptr));
         label_13->setText(QCoreApplication::translate("Dialog", "h_0", nullptr));
         label_14->setText(QCoreApplication::translate("Dialog", "c_h", nullptr));
         label_15->setText(QCoreApplication::translate("Dialog", "n^b", nullptr));
-        label_16->setText(QCoreApplication::translate("Dialog", "\345\211\252\350\203\200\345\270\270\346\225\260", nullptr));
+        label_16->setText(QCoreApplication::translate("Dialog", "dilatancy", nullptr));
         label_17->setText(QCoreApplication::translate("Dialog", "A_0", nullptr));
         label_18->setText(QCoreApplication::translate("Dialog", "n^d", nullptr));
-        label_19->setText(QCoreApplication::translate("Dialog", "\347\273\204\346\236\204-\345\211\252\350\203\200\345\274\240\351\207\217", nullptr));
+        label_19->setText(QCoreApplication::translate("Dialog", "fabric-dilatancy", nullptr));
         label_20->setText(QCoreApplication::translate("Dialog", "z_{max}", nullptr));
         label_21->setText(QCoreApplication::translate("Dialog", "c_z", nullptr));
-        label_22->setText(QCoreApplication::translate("Dialog", "\347\247\257\345\210\206\346\226\271\346\263\225", nullptr));
+        label_22->setText(QCoreApplication::translate("Dialog", "integrator", nullptr));
         pushButton->setText(QCoreApplication::translate("Dialog", "PushButton", nullptr));
         pushButton_2->setText(QCoreApplication::translate("Dialog", "PushButton", nullptr));
     } // retranslateUi

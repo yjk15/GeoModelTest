@@ -80,7 +80,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>剪胀常数</string>
+    <string>dilatancy</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_21">
@@ -101,12 +101,12 @@
     <rect>
      <x>30</x>
      <y>90</y>
-     <width>81</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>临界状态常数</string>
+    <string>critical state</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_19">
@@ -119,7 +119,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>组构张量</string>
+    <string>fabric</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_14">
@@ -145,7 +145,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>屈服面常数</string>
+    <string>yield surface</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_6">
@@ -171,7 +171,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>塑性模量常数</string>
+    <string>plastic modulus</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
@@ -283,7 +283,7 @@
     <rect>
      <x>30</x>
      <y>30</y>
-     <width>71</width>
+     <width>111</width>
      <height>21</height>
     </rect>
    </property>
@@ -293,7 +293,7 @@
     </font>
    </property>
    <property name="text">
-    <string>弹性常数</string>
+    <string>elastic modulus</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_22">

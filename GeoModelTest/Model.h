@@ -49,7 +49,7 @@ private:
 	void IntegratorDMExplicit(bool);
 	struct RK4Class {
 		MATRIX ds, dAlpha, dz;
-		double dee;
+		double dee, dF;
 	};
 	RK4Class RK4(MATRIX stress, MATRIX alpha, double ee, MATRIX z, MATRIX srtain, MATRIX alphaInit);
 	void IntegratorDMImplicit(bool);
@@ -88,6 +88,7 @@ private:
 	MATRIX getdz(double depsvp, MATRIX n, MATRIX z);
 
 	void IntegratorDMF(bool);
+	RK4Class DMFRK4(MATRIX stress, MATRIX alpha, double ee, MATRIX nF, MATRIX srtain, MATRIX alphaInit, double F);
 
 	void IntegratorEB(bool);
 

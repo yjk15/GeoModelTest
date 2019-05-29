@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 	displayParameter = new DisplayParameter(model, this);
 
 	this->resize(500, 600);
-	this->setWindowTitle("砂土本构模型试验");
+	this->setWindowTitle("GeoModelTest");
 	this->setWindowIcon(QIcon("./GMT.ico"));
 
 	setMenu();
@@ -41,42 +41,42 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setMenu() {
-	QMenu *file = new QMenu("文件");
+	QMenu *file = new QMenu("file");
 	QAction *loadPara = new QAction(this);
-	loadPara->setText("载入参数");
+	loadPara->setText("load parameter");
 	file->addAction(loadPara);
 	connect(loadPara, SIGNAL(triggered()), this, SLOT(loadParameter()));
 
 	QAction *savePara = new QAction(this);
-	savePara->setText("保存参数");
+	savePara->setText("save parameter");
 	file->addAction(savePara);
 	connect(savePara, SIGNAL(triggered()), this, SLOT(saveParameter()));
 
 	QAction *saveParaNew = new QAction(this);
-	saveParaNew->setText("另存为参数");
+	saveParaNew->setText("save parameter...");
 	file->addAction(saveParaNew);
 	connect(saveParaNew, SIGNAL(triggered()), this, SLOT(saveParameterInNewFile()));
 
 	QAction *saveOutput = new QAction(this);
-	saveOutput->setText("保存结果");
+	saveOutput->setText("save result");
 	file->addAction(saveOutput);
 	connect(saveOutput, SIGNAL(triggered()), this, SLOT(saveResult()));
 	
 	ui.menuBar->addMenu(file);
 
-	QMenu *menu = new QMenu("帮助");
+	QMenu *menu = new QMenu("help");
 	QAction *userManual = new QAction(this);
-	userManual->setText("用户手册");
+	userManual->setText("user manual");
 	menu->addAction(userManual);
 	connect(userManual, SIGNAL(triggered()), this, SLOT(openManual()));
 
 	QAction *about = new QAction(this);
-	about->setText("关于");
+	about->setText("about");
 	menu->addAction(about);
 	connect(about, SIGNAL(triggered()), this, SLOT(openAbout()));
 
 	QAction *test = new QAction(this);
-	test->setText("测试");
+	test->setText("test");
 	menu->addAction(test);
 	connect(test, SIGNAL(triggered()), this, SLOT(test()));
 	
@@ -87,27 +87,33 @@ void MainWindow::setType() {
 	QPushButton *initStateButton = new QPushButton(this);
 	initStateButton->setFont(QFont("Timers", 11, QFont::Courier));
 	initStateButton->resize(80, 30);
-	initStateButton->setText(tr("起始状态"));
-	initStateButton->move(280, 70);
+	initStateButton->setText(tr("initial"));
+	initStateButton->move(335, 50);
 	connect(initStateButton, SIGNAL(clicked()), this, SLOT(setInitState()));
 
 	QPushButton *endStateButton = new QPushButton(this);
 	endStateButton->setFont(QFont("Timers", 11, QFont::Courier));
 	endStateButton->resize(80, 30);
-	endStateButton->setText(tr("末状态"));
-	endStateButton->move(390, 70);
+	endStateButton->setText(tr("end/rev"));
+	endStateButton->move(335, 90);
 	connect(endStateButton, SIGNAL(clicked()), this, SLOT(setEndState()));
 
 	QComboBox *testType = new QComboBox(this);
 	testType->setFont(QFont("Timers", 11, QFont::Courier));
-	testType->resize(180,30);
+	testType->resize(280,30);
 	testType->move(30, 70);
-	testType->addItem(QWidget::tr("不排水三轴压缩试验"));
-	testType->addItem(QWidget::tr("不排水三轴挤长试验"));
-	testType->addItem(QWidget::tr("不排水三轴循环试验"));
-	testType->addItem(QWidget::tr("排水三轴压缩试验"));
-	testType->addItem(QWidget::tr("排水三轴挤长试验"));
-	testType->addItem(QWidget::tr("不排水循环扭剪试验"));
+	//testType->addItem(QWidget::tr("不排水三轴压缩试验"));
+	//testType->addItem(QWidget::tr("不排水三轴挤长试验"));
+	//testType->addItem(QWidget::tr("不排水三轴循环试验"));
+	//testType->addItem(QWidget::tr("排水三轴压缩试验"));
+	//testType->addItem(QWidget::tr("排水三轴挤长试验"));
+	//testType->addItem(QWidget::tr("不排水循环扭剪试验"));
+	testType->addItem(QWidget::tr("undrained triaxial compression"));
+	testType->addItem(QWidget::tr("undrained triaxial extension"));
+	testType->addItem(QWidget::tr("cyclic undrained triaxial"));
+	testType->addItem(QWidget::tr("drained triaxial compression"));
+	testType->addItem(QWidget::tr("drained triaxial extension"));
+	testType->addItem(QWidget::tr("undrained cyclic torsional"));
 	connect(testType, SIGNAL(currentIndexChanged(int)), this, SLOT(setTestType(int)));
 }
 
@@ -117,17 +123,17 @@ void MainWindow::setModel() {
 	consModel->resize(280, 30);
 	consModel->move(30, 164);
 	consModel->height();
-	consModel->addItem(QWidget::tr("线性模型"));
-	consModel->addItem(QWidget::tr("EB模型"));
-	consModel->addItem(QWidget::tr("Dafalias and Manzari模型"));
-	consModel->addItem(QWidget::tr("Cycliq模型"));
-	consModel->addItem(QWidget::tr("改进DM模型"));
+	consModel->addItem(QWidget::tr("linear elastic"));
+	consModel->addItem(QWidget::tr("EB"));
+	consModel->addItem(QWidget::tr("Dafalias and Manzari"));
+	consModel->addItem(QWidget::tr("Cycliq"));
+	consModel->addItem(QWidget::tr("DM with fabric"));
 	connect(consModel, SIGNAL(currentIndexChanged(int)), this, SLOT(setConsModel(int)));
 
 	QPushButton *modelParameter = new QPushButton(this);
 	modelParameter->setFont(QFont("Timers", 11, QFont::Courier));
 	modelParameter->resize(80, 30);
-	modelParameter->setText(tr("模型参数"));
+	modelParameter->setText(tr("parameter"));
 	modelParameter->move(335, 164);
 	connect(modelParameter, SIGNAL(clicked()), this, SLOT(setModelParameter()));
 }
@@ -135,14 +141,14 @@ void MainWindow::setModel() {
 void MainWindow::calculate() {
 	QLabel *labelStep= new QLabel(this);
 	labelStep->setFont(QFont("Timers", 11, QFont::Courier));
-	labelStep->setText("步长");
-	labelStep->resize(80, 30);
+	labelStep->setText("step length");
+	labelStep->resize(120, 30);
 	labelStep->move(30, 265);
 
 	QComboBox *step = new QComboBox(this);
 	step->setFont(QFont("Timers", 11, QFont::Courier));
 	step->resize(120, 30);
-	step->move(80, 265);
+	step->move(140, 265);
 	step->addItem("1e-3");
 	step->addItem("1e-4");
 	step->addItem("1e-5");
@@ -155,14 +161,14 @@ void MainWindow::calculate() {
 	QPushButton *check = new QPushButton(this);
 	check->setFont(QFont("Timers", 11, QFont::Courier));
 	check->resize(100, 30);
-	check->setText(tr("检查各参数"));
-	check->move(80, 330);
+	check->setText(tr("check"));
+	check->move(140, 330);
 	connect(check, SIGNAL(clicked()), this, SLOT(checkParameter()));
 
 	QPushButton *calculateButton = new QPushButton(this);
 	calculateButton->setFont(QFont("Timers", 11, QFont::Courier));
 	calculateButton->resize(80, 80);
-	calculateButton->setText(tr("开始计算"));
+	calculateButton->setText(tr("calculate"));
 	calculateButton->move(335, 270);
 	connect(calculateButton, SIGNAL(clicked()), this, SLOT(beginCalculate()));
 }
@@ -176,7 +182,7 @@ void MainWindow::drawFigure() {
 
 	QLabel *label1 = new QLabel(this);
 	label1->setFont(QFont("Timers", 11, QFont::Courier));
-	label1->setText("图表标题");
+	label1->setText("title");
 	label1->resize(80, 30);
 	label1->move(30, 430);
 
@@ -233,20 +239,20 @@ void MainWindow::drawFigure() {
 	QPushButton *draw = new QPushButton(this);
 	draw->setFont(QFont("Timers", 11, QFont::Courier));
 	draw->resize(80, 30);
-	draw->setText(tr("绘图"));
+	draw->setText(tr("figure"));
 	draw->move(80, 530);
 	connect(draw, SIGNAL(clicked()), this, SLOT(drawing()));
 
 	QPushButton *resetButton = new QPushButton(this);
 	resetButton->setFont(QFont("Timers", 11, QFont::Courier));
 	resetButton->resize(80, 30);
-	resetButton->setText(tr("清除设置"));
+	resetButton->setText(tr("reset"));
 	resetButton->move(335, 530);
 	connect(resetButton, SIGNAL(clicked()), this, SLOT(reset()));
 }
 
 void MainWindow::setInitState() {
-	ui.statusBar->showMessage(tr("设置起始状态"));
+	ui.statusBar->showMessage(tr("set initial state"));
 	connect(initState, SIGNAL(sendInitState(MATRIX, MATRIX, double)), this, SLOT(receiveInitState(MATRIX, MATRIX, double)));
 	initState->show();
 }
@@ -258,7 +264,8 @@ void MainWindow::receiveInitState(MATRIX stress, MATRIX strain, double ee) {
 }
 
 void MainWindow::setEndState() {
-	ui.statusBar->showMessage(tr("设置终止/反转状态"));
+	//ui.statusBar->showMessage(tr("设置终止/反转状态"));
+	ui.statusBar->showMessage(tr("set reversal/ending state"));
 	if (model->testType == 2 || model->testType == 5) {
 		connect(endAndReversalState, SIGNAL(sendEndAndReversalState(int, double, int)), this, SLOT(receiveEndAndReversalState(int, double, int)));
 		endAndReversalState->show();
@@ -276,7 +283,7 @@ void MainWindow::receiveEndAndReversalState(int type, double point, int reverse)
 }
 
 void MainWindow::setTestType(int type) {
-	ui.statusBar->showMessage(tr("设置试验类型"));
+	ui.statusBar->showMessage(tr("set test type"));
 	this->model->testType = type;
 	//char a[10];
 	//_itoa(this->model->testType, a, 10);
@@ -284,7 +291,7 @@ void MainWindow::setTestType(int type) {
 }
 
 void MainWindow::openManual() {
-	QString qtManulFile = "./trans.pdf";
+	QString qtManulFile = "./manual.pdf";
 	QDesktopServices::openUrl(QUrl::fromLocalFile(qtManulFile));
 }
 
@@ -293,9 +300,9 @@ void MainWindow::openAbout() {
 }
 
 void MainWindow::loadParameter() {
-	filePath = QFileDialog::getOpenFileName(this, tr("载入参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+	filePath = QFileDialog::getOpenFileName(this, tr("load"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	loadPara();
-	ui.statusBar->showMessage(tr("参数已加载"));
+	ui.statusBar->showMessage(tr("parameter has been loaded"));
 }
 
 void MainWindow::loadPara() {
@@ -346,7 +353,7 @@ void MainWindow::loadPara() {
 
 void MainWindow::saveParameter() {
 	if (filePath == "")
-		filePath = QFileDialog::getSaveFileName(this, tr("保存参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+		filePath = QFileDialog::getSaveFileName(this, tr("save"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QString para;
 	para.append(QString::number(model->testType));
 	para.append("\n");
@@ -390,11 +397,11 @@ void MainWindow::saveParameter() {
 	file.open(QIODevice::WriteOnly);
 	file.write(para.toUtf8());
 	file.close();
-	ui.statusBar->showMessage(tr("参数已存储"));
+	ui.statusBar->showMessage(tr("paramenter has been saved"));
 }
 
 void MainWindow::saveParameterInNewFile() {
-	filePath = QFileDialog::getSaveFileName(this, tr("另存为参数"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+	filePath = QFileDialog::getSaveFileName(this, tr("save"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	QString para;
 	para.append(QString::number(model->testType));
 	para.append("\n");
@@ -438,13 +445,15 @@ void MainWindow::saveParameterInNewFile() {
 	file.open(QIODevice::WriteOnly);
 	file.write(para.toUtf8());
 	file.close();
-	ui.statusBar->showMessage(tr("参数已存储于新文件"));
+	//ui.statusBar->showMessage(tr("参数已存储于新文件"));
+	ui.statusBar->showMessage(tr("parameter has been saved in a new document"));
 }
 
 void MainWindow::saveResult() {
-	resultFilePath = QFileDialog::getSaveFileName(this, tr("保存输出文件"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
+	resultFilePath = QFileDialog::getSaveFileName(this, tr("save"), "", tr("data(*.dat);;txt(*.txt);;all(*.*)"));
 	saveRes();
-	ui.statusBar->showMessage(tr("计算结果已存储"));
+	//ui.statusBar->showMessage(tr("计算结果已存储"));
+	ui.statusBar->showMessage(tr("result is saved"));
 }
 
 void MainWindow::saveRes() {
@@ -460,6 +469,10 @@ void MainWindow::saveRes() {
 			result.append(QString::number(model->strainPath->at(i).matrix[j]));
 			result.append(" ");
 		}
+		for (int j = 0; j < 2; j++) {
+			result.append(QString::number(model->saveParameter.at(i).at(j)));
+			result.append(" ");
+		}
 		result.append("\n");
 	}
 	file.write(result.toUtf8());
@@ -472,7 +485,8 @@ void MainWindow::setConsModel(int model) {
 }
 
 void MainWindow::setModelParameter() {
-	ui.statusBar->showMessage(tr("设置模型参数"));
+	//ui.statusBar->showMessage(tr("设置模型参数"));
+	ui.statusBar->showMessage(tr("set model parameter"));
 	switch (model->model) {
 	case 0:
 		connect(inputModelE, SIGNAL(sendEv(double, double)), this, SLOT(receiveE(double, double)));
@@ -531,7 +545,8 @@ void MainWindow::receiveCycliq(double* para) {
 }
 
 void MainWindow::setStepLength(int l) {
-	ui.statusBar->showMessage(tr("设置步长"));
+	//ui.statusBar->showMessage(tr("设置步长"));
+	ui.statusBar->showMessage(tr("set step length"));
 	switch (l) {
 	case 0:
 		this->model->stepLength = 1e-3;
@@ -561,14 +576,15 @@ void MainWindow::setStepLength(int l) {
 }
 
 void MainWindow::checkParameter() {
-	ui.statusBar->showMessage(tr("检查参数"));
+	//ui.statusBar->showMessage(tr("检查参数"));
+	ui.statusBar->showMessage(tr("check parameter"));
 	delete displayParameter;
 	displayParameter = new DisplayParameter(model, this);
 	displayParameter->show();
 }
 
 void MainWindow::beginCalculate() {
-	QMessageBox *message = new QMessageBox(QMessageBox::Information, "计算中", tr("正在计算……"), QMessageBox::NoButton, this);
+	QMessageBox *message = new QMessageBox(QMessageBox::Information, "calculating", tr("calculating..."), QMessageBox::NoButton, this);
 	message->show();
 	clock_t start, finish;
 	double cost;
@@ -578,7 +594,8 @@ void MainWindow::beginCalculate() {
 	finish = clock();
 	cost = (double)(finish - start) / CLOCKS_PER_SEC;
 	tmp = QString::number(cost);
-	out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
+	//out = tr("计算完成，共耗时") + tmp + "s，其中积分耗时" + QString::number(model->timer) + "s";
+	out = tr("calculation complete.Total time:") + tmp + "s. Integration time:" + QString::number(model->timer) + "s";
 	//out += "beta耗时" + QString::number(model->betaTimer) + "s，pre耗时" + QString::number(model->preTimer) + "s";
 	//out += "子步" + QString::number(double(model->subSteps / model->endAndReversalPoint));
 	//out += "。RK4的次数" + QString::number(double(model->CPM));
@@ -592,17 +609,20 @@ void MainWindow::setFigureTitle() {
 }
 
 void MainWindow::setAxisX(int x) {
-	ui.statusBar->showMessage(tr("设置X轴"));
+	//ui.statusBar->showMessage(tr("设置X轴"));
+	ui.statusBar->showMessage(tr("set axis X"));
 	this->model->axisX = x;
 }
 
 void MainWindow::setAxisY(int y) {
-	ui.statusBar->showMessage(tr("设置Y轴"));
+	//ui.statusBar->showMessage(tr("设置Y轴"));
+	ui.statusBar->showMessage(tr("set axis Y"));
 	this->model->axisY = y;
 }
 
 void MainWindow::drawing() {
-	ui.statusBar->showMessage(tr("画图"));
+	//ui.statusBar->showMessage(tr("画图"));
+	ui.statusBar->showMessage(tr("figure"));
 	figure->setNewChart();
 	figure->show();
 }
@@ -612,23 +632,25 @@ void MainWindow::reset() {
 	model = new MODEL();
 	figure = new Chart(model, this);
 	displayParameter = new DisplayParameter(model, this);
-	ui.statusBar->showMessage(tr("已重置所有参数"));
+	ui.statusBar->showMessage(tr("reset all parameter"));
 }
 
 void MainWindow::test() {
 	QMessageBox *message = new QMessageBox(QMessageBox::Information, "测试中", tr("正在计算……"), QMessageBox::NoButton, this);
 	message->show();
-	filePath = tr("./TestFile/testCycliq");
-	resultFilePath = tr("./Result/testResultCycliq");
-	for (int i = 120; i < 130; i++) {
+	filePath = tr("./para/test");
+	resultFilePath = tr("./para/undrainedTriCompession");
+	//resultFilePath = tr("./para/ansi");
+	for (int i = 5; i < 8; i++) {
 		filePath += QString::number(i) + tr(".dat");
 		resultFilePath += QString::number(i) + tr(".txt");
 		loadPara();
 		model->Simulate();
 		saveRes();
 		reset();
-		filePath = tr("./TestFile/testCycliq");
-		resultFilePath = tr("./Result/testResultCycliq");
+		filePath = tr("./para/test");
+		//resultFilePath = tr("./para/ansi");
+		resultFilePath = tr("./para/undrainedTriCompession");
 	}
 	message->close();
 }
